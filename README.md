@@ -44,3 +44,7 @@ The top-level Makefile in this directory will build everything below. Just run
     python run.py
 
 use `sudo` if necessary.
+
+## Known issue
+
+Due to optimizations to the system, we cannot process small witness(input). We will pad the input to appropriate size. This will slow down on small instances and produce different result compared to the paper. Large instance remains the same.
