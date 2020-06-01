@@ -1,4 +1,40 @@
-# Interface of the zero-knowledge system, Virgo:
+# Zero-knowledge system: Virgo
+
+## Setup
+
+Run `./setup.sh` to install dependencies.
+
+## Replay experiments
+### Image scaling with Lanczos method
+`cd tests/lanczos`
+
+`python build.py`
+
+`python run.py`
+
+### Matrix multiplication: P proves to V that it knows two matrices whose product equals a public matrix.
+
+`cd tests/matmul`
+
+`python build.py`
+
+`python run.py`
+
+### Merkel tree with SHA256 hash function
+`cd tests/SHA256`
+
+`python build.py`
+
+`python run.py`
+
+use `sudo` if necessary.
+
+
+## Known issue
+
+Due to optimizations to the system, we cannot process small witness(input). We will pad the input to appropriate size. This will slow down on small instances and produce different result compared to the paper. Large instance remains the same.
+
+
 
 ## Input file and the file format
 Our system is based on layered arithmatic circuit. When you want to generate the zero knowledge proof for the statement, you should tranfer it into a text file "input.txt" to represent the corresponding circuit.  
@@ -31,27 +67,4 @@ It's a gate that output the summation of previous layer. A simple use case is ma
 1 1 0 0 1 \\output layer(layer 2): it's a multiplication gate with input wire of 0 and 1 in previous layer.
 ```
 
-## Some tests on the system 
-### Image scaling with Lanczos method
-`cd tests/lanczos`
 
-`python build.py`
-
-`python run.py`
-
-### Matrix multiplication: P proves to V that it knows two matrices whose product equals a public matrix.
-
-`cd tests/matmul`
-
-`python build.py`
-
-`python run.py`
-
-### Merkel tree with SHA256 hash function
-`cd tests/SHA256`
-
-`python build.py`
-
-`python run.py`
-
-use `sudo` if necessary.
