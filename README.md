@@ -25,21 +25,22 @@ In other words, you'll need a C++11-compatible compiler (we use clang-7) (g++ 5,
 
 The top-level Makefile in this directory will build everything below. Just run
 
+    cmake .
     make -j4        # for example
 
 ## Testing ##
 ### Lanczos
-    cd implemetation/tests/lanczos
+    cd tests/lanczos
     python build.py
     python run.py
 
 ### Matmul
-    cd implemetation/tests/matmul
+    cd tests/matmul
     python build.py
     python run.py
 
 ### SHA256
-    cd implemetation/tests/SHA256
+    cd tests/SHA256
     python build.py
     python run.py
 
