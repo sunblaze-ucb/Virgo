@@ -7,7 +7,7 @@ This repo will help you to run all tests that performed in the paper.
 
 # Acknowledgement
 
-Our benchmarks use the SHA256 circuit generator and LANCZOS circuit generator from Hyrax (https://github.com/hyraxZK). The files are in [/test/](https://github.com/sunblaze-ucb/Virgo/blob/master/tests/). We thank the Hyrax authors Riad S. Wahby, Ioanna Tzialla,abhi shelat, Justin Thaler and Michael Walfish for making the code open-source.
+Our benchmarks use the SHA256 circuit generator and LANCZOS circuit generator from Hyrax (https://github.com/hyraxZK). The files are in [/test/](https://github.com/sunblaze-ucb/Virgo/blob/master/tests/). The files are Copyright 2017 Riad S. Wahby rsw@cs.stanford.edu and the Hyrax authors, and we make no changes to the files. We thank the Hyrax authors Riad S. Wahby, Ioanna Tzialla,abhi shelat, Justin Thaler and Michael Walfish for making the code open-source.
 
 
 ## Prerequisites ##
