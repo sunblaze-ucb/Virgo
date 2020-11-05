@@ -1,21 +1,13 @@
-# Acknowledgement
-
-We use [Hyrax](https://github.com/hyraxZK)'s SHA256 circuit generator and LANCZOS circuit generator as a subroutine.
-
-We list all files from Hyrax that in the following:
-- [SHA256 Gen](https://github.com/sunblaze-ucb/Virgo/blob/master/tests/SHA256/sha256gen.py)
-- [SHA256 Gen batch file](https://github.com/sunblaze-ucb/Virgo/blob/master/tests/SHA256/build.sh)
-- [LANCZOS Gen](https://github.com/sunblaze-ucb/Virgo/blob/master/tests/lanczos/lanczos2.py)
-- [LANCZOS GEN batch file](https://github.com/sunblaze-ucb/Virgo/blob/master/tests/lanczos/build.sh)
-
-Thanks for their effort in generating these circuits, this saves us a ton of time.
-
 # Virgo ZK reference implementation
 
 [Virgo](https://eprint.iacr.org/2019/1482) is a doubly-efficient (meaning,
 for both the prover and the verifier) zkSNARK.
 
 This repo will help you to run all tests that performed in the paper.
+
+# Acknowledgement
+
+Our benchmarks use the SHA256 circuit generator and LANCZOS circuit generator from Hyrax (https://github.com/hyraxZK). The files are in [/test/](https://github.com/sunblaze-ucb/Virgo/blob/master/tests/). We thank the Hyrax authors Riad S. Wahby, Ioanna Tzialla,abhi shelat, Justin Thaler and Michael Walfish for making the code open-source.
 
 
 ## Prerequisites ##
