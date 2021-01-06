@@ -1,0 +1,3 @@
+[submodule "include/flo-shani-aesni"]
+	path = include/flo-shani-aesni
+	url = https://github.com/armfazh/flo-shani-aesni
