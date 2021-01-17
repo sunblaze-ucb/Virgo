@@ -74,7 +74,7 @@ Now all commitments are done, both verifier and prover shares ```merkle_root_h, 
 To verify the claim, the verifier runs:
 
 ```c++
-processed_public_array = public_array_prepare(public_array, log_length);
+processed_public_array = public_array_prepare_generic(public_array, log_length);
 poly_ver.verify_poly_commitment(all_sum, log_length, processed_public_array, all_pub_mask, verification_time, proof_size, prover_time, merkle_root_l, merkle_root_h);
 ```
 
