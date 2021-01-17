@@ -6,20 +6,12 @@
 #include "linear_gkr/zk_prover.h"
 #include "linear_gkr/polynomial.h"
 #include <utility>
-
-class ldt_commitment
-{
-public:
-	__hhash_digest* commitment_hhash;
-	prime_field::field_element *randomness;
-	prime_field::field_element *final_rs_code;
-	int mx_depth;
-	int repeat_no;
-};
+#include "poly_commitment/poly_commit.h"
 
 class zk_verifier
 {
 public:
+	poly_commit::poly_commit_verifier poly_ver;
 	/** @name Randomness&Const 
 	* Storing randomness or constant for simplifying computation/
 	*/
@@ -53,8 +45,7 @@ public:
 	prime_field::field_element *VPD_randomness, *one_minus_VPD_randomness;
 	void self_inner_product_test(prime_field::field_element alpha_beta_sum, prime_field::field_element v_in);
 	/**Test the evaluation of all mask polys after doing random linear combination for them. */
-	bool vpd_verify(prime_field::field_element* all_sum, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h);
-	ldt_commitment commit_phase();
+	bool verify_poly_commitment(prime_field::field_element* all_sum, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h);
 };
 
 #endif

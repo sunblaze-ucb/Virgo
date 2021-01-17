@@ -11,10 +11,12 @@
 #include "VPD/vpd_prover.h"
 #include "infrastructure/my_hhash.h"
 #include "VPD/fri.h"
+#include "poly_commitment/poly_commit.h"
 
 class zk_prover
 {
 public:
+	poly_commit::poly_commit_prover poly_prover;
 	/** @name Basic
 	* Basic information and variables about the arithmetic circuit C.*/
 	///@{

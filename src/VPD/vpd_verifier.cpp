@@ -2,6 +2,7 @@
 #include "infrastructure/RS_polynomial.h"
 #include "infrastructure/utility.h"
 #include "linear_gkr/zk_prover.h"
+#include "poly_commitment/poly_commit.h"
 #include <iostream>
 #include <cstdio>
 inline bool verify_merkle(__hhash_digest h, std::vector<__hhash_digest> merkle_path, int len, int pow, std::vector<std::pair<prime_field::field_element, prime_field::field_element> > value)
@@ -39,45 +40,23 @@ inline bool verify_merkle(__hhash_digest h, std::vector<__hhash_digest> merkle_p
 	return equals(h, cur_hhash) && equals(value_h, merkle_path[len - 1]);
 }
 
-prime_field::field_element *q_coef_verifier, *q_ratio, *q_eval_verifier;
 prime_field::field_element *mask_q_coef;
 
-void dfs_ratio(int dep, prime_field::field_element val, prime_field::field_element *r, prime_field::field_element *one_minus_r, int pos)
-{
-    if(dep == log_slice_number)
-        q_ratio[pos] = val;
-    else
-    {
-        dfs_ratio(dep + 1, val * one_minus_r[log_slice_number - 1 - dep], r, one_minus_r, pos << 1);
-		dfs_ratio(dep + 1, val * r[log_slice_number - 1 - dep], r, one_minus_r, pos << 1 | 1);
-    }
-}
-void dfs_coef(int dep, prime_field::field_element val, prime_field::field_element *r, prime_field::field_element *one_minus_r, int pos, int r_len)
-{
-    if(dep == r_len)
-        q_eval_verifier[pos] = val;
-    else
-    {
-        dfs_coef(dep + 1, val * one_minus_r[r_len - 1 - dep], r, one_minus_r, pos << 1, r_len);
-		dfs_coef(dep + 1, val * r[r_len - 1 - dep], r, one_minus_r, pos << 1 | 1, r_len);
-    }
-}
-
 //return the hhash array of commitments, randomness and final small polynomial (represented by rscode)
-ldt_commitment zk_verifier::commit_phase()
+poly_commit::ldt_commitment poly_commit::poly_commit_prover::commit_phase(int log_length)
 {
     //Prover do the work
     std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
     auto log_current_witness_size_per_slice_cp = fri::log_current_witness_size_per_slice;
 	//assuming we already have the initial commit
-	int codeword_size = (1 << (C.circuit[0].bit_length + rs_code_rate - log_slice_number));
+	int codeword_size = (1 << (log_length + rs_code_rate - log_slice_number));
 	//repeat until the codeword is constant
-	__hhash_digest* ret = new __hhash_digest[C.circuit[0].bit_length + rs_code_rate - log_slice_number];
-	prime_field::field_element* randomness = new prime_field::field_element[C.circuit[0].bit_length + rs_code_rate];
+	__hhash_digest* ret = new __hhash_digest[log_length + rs_code_rate - log_slice_number];
+	prime_field::field_element* randomness = new prime_field::field_element[log_length + rs_code_rate];
 	int ptr = 0;
 	while(codeword_size > (1 << rs_code_rate))
 	{
-        assert(ptr < C.circuit[0].bit_length + rs_code_rate - log_slice_number);
+        assert(ptr < log_length + rs_code_rate - log_slice_number);
 		randomness[ptr] = prime_field::random();
 		ret[ptr] = fri::commit_phase_step(randomness[ptr]);
 		codeword_size /= 2;
@@ -92,13 +71,13 @@ ldt_commitment zk_verifier::commit_phase()
 
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0);
-	p -> total_time += time_span.count();
+	total_time += time_span.count();
 	printf("Commit time %lf\n", time_span.count());
 
 	return com;
 }
 
-bool zk_verifier::vpd_verify(prime_field::field_element* all_sum, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h)
+bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::field_element* all_sum, int log_length, prime_field::field_element *public_array, std::vector<prime_field::field_element> &all_pub_mask, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h)
 {
     auto all_pub_msk_arr = new prime_field::field_element[all_pub_mask.size()];
 	for(int i = 0; i < all_pub_mask.size(); ++i)
@@ -108,7 +87,7 @@ bool zk_verifier::vpd_verify(prime_field::field_element* all_sum, double &v_time
 	
     //prepare ratio and array q
     char *command = new char[1024];
-    sprintf(command, "./fft_gkr %d log_fftgkr.txt", C.circuit[0].bit_length - log_slice_number);
+    sprintf(command, "./fft_gkr %d log_fftgkr.txt", log_length - log_slice_number);
     system(command);
     FILE *fft_gkr_result = fopen("log_fftgkr.txt", "r");
     float v_time_fft, p_time_fft;
@@ -118,22 +97,16 @@ bool zk_verifier::vpd_verify(prime_field::field_element* all_sum, double &v_time
     p_time += p_time_fft;
     proof_size += proof_size_fft;
     fclose(fft_gkr_result);
-
-    q_eval_verifier = new prime_field::field_element[(1 << (C.circuit[0].bit_length - log_slice_number))];
-    q_ratio = new prime_field::field_element[(1 << log_slice_number) + 1];
-    q_ratio[(1 << log_slice_number)] = prime_field::field_element(1);
-    dfs_ratio(0, prime_field::field_element(1), VPD_randomness + C.circuit[0].bit_length - log_slice_number, one_minus_VPD_randomness + C.circuit[0].bit_length - log_slice_number, 0);
-    dfs_coef(0, prime_field::field_element(1), VPD_randomness, one_minus_VPD_randomness, 0, C.circuit[0].bit_length - log_slice_number);
-    q_coef_verifier = new prime_field::field_element[(1 << (C.circuit[0].bit_length - log_slice_number))];
-    inverse_fast_fourier_transform(q_eval_verifier, (1 << (C.circuit[0].bit_length - log_slice_number)), (1 << (C.circuit[0].bit_length - log_slice_number)), prime_field::get_root_of_unity(C.circuit[0].bit_length - log_slice_number), q_coef_verifier);
-
-    auto com = commit_phase();
+	
+    auto com = p -> commit_phase(log_length);
+    
+    int coef_slice_size = (1 << (log_length - log_slice_number));
 
     for(int rep = 0; rep < 33; ++rep)
     {
         int slice_count = 1 << log_slice_number;
         slice_count++; //for masks
-        int slice_size = (1 << (C.circuit[0].bit_length + rs_code_rate - log_slice_number));
+        int slice_size = (1 << (log_length + rs_code_rate - log_slice_number));
 
         std::chrono::high_resolution_clock::time_point t0, t1;
         std::chrono::duration<double> time_span;
@@ -144,31 +117,31 @@ bool zk_verifier::vpd_verify(prime_field::field_element* all_sum, double &v_time
         prime_field::field_element root_of_unity;
         prime_field::field_element y;
         bool equ_beta;
-        assert(C.circuit[0].bit_length - log_slice_number > 0);
+        assert(log_length - log_slice_number > 0);
         long long pow;
-        for(int i = 0; i < C.circuit[0].bit_length - log_slice_number; ++i)
+        for(int i = 0; i < log_length - log_slice_number; ++i)
         {
             t0 = std::chrono::high_resolution_clock::now();
             if(i == 0)
             {
                 do
                 {
-                    pow = rand() % (1 << (C.circuit[0].bit_length + rs_code_rate - log_slice_number - i));
-                } while (pow < (1 << (C.circuit[0].bit_length - log_slice_number - i)) || pow % 2 == 1);
-                root_of_unity = prime_field::get_root_of_unity(C.circuit[0].bit_length + rs_code_rate - log_slice_number - i);
+                    pow = rand() % (1 << (log_length + rs_code_rate - log_slice_number - i));
+                } while (pow < (1 << (log_length - log_slice_number - i)) || pow % 2 == 1);
+                root_of_unity = prime_field::get_root_of_unity(log_length + rs_code_rate - log_slice_number - i);
                 y = fast_pow(root_of_unity, pow);
             }
             else
             {
                 root_of_unity = root_of_unity * root_of_unity;
-                pow = pow % (1 << (C.circuit[0].bit_length + rs_code_rate - log_slice_number - i));
+                pow = pow % (1 << (log_length + rs_code_rate - log_slice_number - i));
                 pre_y = y;
                 y = y * y;
             }
             long long s0_pow, s1_pow;
             assert(pow % 2 == 0);
             s0_pow = pow / 2;
-            s1_pow = (pow + (1LL << (C.circuit[0].bit_length + rs_code_rate - log_slice_number - i))) / 2;
+            s1_pow = (pow + (1LL << (log_length + rs_code_rate - log_slice_number - i))) / 2;
             s0 = fast_pow(root_of_unity, s0_pow);
             s1 = fast_pow(root_of_unity, s1_pow);
             int indicator;
@@ -229,16 +202,10 @@ bool zk_verifier::vpd_verify(prime_field::field_element* all_sum, double &v_time
                 inv_H = prime_field::inv(prime_field::field_element(slice_size >> rs_code_rate));
                 alpha.first.resize(slice_count);
 
-                prime_field::field_element q_eval_0_msk, q_eval_1_msk, x0, x1;
+                prime_field::field_element q_eval_0_msk, q_eval_1_msk, x0, x1, tst0, tst1;
                 prime_field::field_element q_eval_0_val, q_eval_1_val;
-                q_eval_0_msk = q_eval_1_msk = prime_field::field_element(0);
+                tst0 = tst1 = q_eval_0_msk = q_eval_1_msk = prime_field::field_element(0);
                 q_eval_0_val = q_eval_1_val = prime_field::field_element(0);
-                x0 = x1 = prime_field::field_element(1);
-                for(int k = 0; k < (1 << (C.circuit[0].bit_length - log_slice_number)); ++k)
-                {
-                    q_eval_0_val = q_eval_0_val + x0 * q_coef_verifier[k]; x0 = x0 * x[0];
-                    q_eval_1_val = q_eval_1_val + x1 * q_coef_verifier[k]; x1 = x1 * x[1];
-                }
                 x0 = x1 = prime_field::field_element(1);
                 for(int k = 0; k < all_pub_mask.size(); ++k)
                 {
@@ -247,6 +214,15 @@ bool zk_verifier::vpd_verify(prime_field::field_element* all_sum, double &v_time
                 }
                 for(int j = 0; j < slice_count; ++j)
                 {
+                	tst0 = tst1 = prime_field::field_element(0);
+                	x0 = x1 = prime_field::field_element(1);
+                	for(int k = 0; k < (1 << (log_length - log_slice_number)); ++k)
+		            {
+		                tst0 = tst0 + x0 * public_array[k + j * coef_slice_size];
+		                x0 = x0 * x[0];
+		                tst1 = tst1 + x1 * public_array[k + j * coef_slice_size];
+		                x1 = x1 * x[1];
+		            }
                     prime_field::field_element q_eval_0 = prime_field::field_element(0), x0 = prime_field::field_element(1);
                     prime_field::field_element q_eval_1 = prime_field::field_element(0), x1 = prime_field::field_element(1);
                     if(j != slice_count - 1)
@@ -270,9 +246,9 @@ bool zk_verifier::vpd_verify(prime_field::field_element* all_sum, double &v_time
                     }
                     else
                     {
-                        alpha.first[j].first = alpha_l.first[j].first * q_eval_0 * q_ratio[j] - (rou[0] - one) * alpha_h.first[j].first;
+                        alpha.first[j].first = alpha_l.first[j].first * tst0 - (rou[0] - one) * alpha_h.first[j].first;
                         alpha.first[j].first = (alpha.first[j].first * prime_field::field_element(slice_size >> rs_code_rate) - all_sum[j]) * inv_x[0];
-                        alpha.first[j].second = alpha_l.first[j].second * q_eval_1 * q_ratio[j] - (rou[1] - one) * alpha_h.first[j].second;
+                        alpha.first[j].second = alpha_l.first[j].second * tst1 - (rou[1] - one) * alpha_h.first[j].second;
                         alpha.first[j].second = (alpha.first[j].second * prime_field::field_element(slice_size >> rs_code_rate) - all_sum[j]) * inv_x[1];
                     }
                     if(s0_pow > s1_pow)

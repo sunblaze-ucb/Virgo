@@ -834,6 +834,66 @@ void zk_verifier::self_inner_product_test(prime_field::field_element alpha_beta_
 	assert(sum == all_mask_sum);
 	assert(v_in == alpha_beta_sum);
 }
+prime_field::field_element *q_eval_real;
+void dfs_for_public_eval(int dep, prime_field::field_element val, prime_field::field_element *r_0, prime_field::field_element *one_minus_r_0, int r_0_len, int pos)
+{
+	if(dep == r_0_len)
+		q_eval_real[pos] = val;
+	else
+	{
+		dfs_for_public_eval(dep + 1, val * one_minus_r_0[r_0_len - 1 - dep], r_0, one_minus_r_0, r_0_len, pos << 1);
+		dfs_for_public_eval(dep + 1, val * r_0[r_0_len - 1 - dep], r_0, one_minus_r_0, r_0_len, pos << 1 | 1);
+	}
+}
+
+prime_field::field_element *q_eval_verifier;
+prime_field::field_element *q_ratio;
+void dfs_ratio(int dep, prime_field::field_element val, prime_field::field_element *r, prime_field::field_element *one_minus_r, int pos)
+{
+    if(dep == log_slice_number)
+        q_ratio[pos] = val;
+    else
+    {
+        dfs_ratio(dep + 1, val * one_minus_r[log_slice_number - 1 - dep], r, one_minus_r, pos << 1);
+		dfs_ratio(dep + 1, val * r[log_slice_number - 1 - dep], r, one_minus_r, pos << 1 | 1);
+    }
+}
+
+void dfs_coef(int dep, prime_field::field_element val, prime_field::field_element *r, prime_field::field_element *one_minus_r, int pos, int r_len)
+{
+    if(dep == r_len)
+        q_eval_verifier[pos] = val;
+    else
+    {
+        dfs_coef(dep + 1, val * one_minus_r[r_len - 1 - dep], r, one_minus_r, pos << 1, r_len);
+		dfs_coef(dep + 1, val * r[r_len - 1 - dep], r, one_minus_r, pos << 1 | 1, r_len);
+    }
+}
+
+prime_field::field_element* public_array_prepare(prime_field::field_element *r, prime_field::field_element *one_minus_r, int log_length)
+{
+	q_eval_verifier = new prime_field::field_element[(1 << (log_length - log_slice_number))];
+    q_ratio = new prime_field::field_element[(1 << log_slice_number) + 1];
+    q_ratio[(1 << log_slice_number)] = prime_field::field_element(1);
+    dfs_ratio(0, prime_field::field_element(1), r + log_length - log_slice_number, one_minus_r + log_length - log_slice_number, 0);
+    dfs_coef(0, prime_field::field_element(1), r, one_minus_r, 0, log_length - log_slice_number);
+    prime_field::field_element *q_coef_verifier = new prime_field::field_element[(1 << (log_length - log_slice_number))];
+    inverse_fast_fourier_transform(q_eval_verifier, (1 << (log_length - log_slice_number)), (1 << (log_length - log_slice_number)), prime_field::get_root_of_unity(log_length - log_slice_number), q_coef_verifier);
+	
+	prime_field::field_element *q_coef_arr = new prime_field::field_element[1 << log_length];
+	int coef_slice_size = (1 << (log_length - log_slice_number));
+	for(int i = 0; i < (1 << log_slice_number); ++i)
+	{
+		for(int j = 0; j < coef_slice_size; ++j)
+		{
+			q_coef_arr[i * coef_slice_size + j] = q_coef_verifier[j] * q_ratio[i];
+		}
+	}
+	delete[] q_coef_verifier;
+	delete[] q_eval_verifier;
+	delete[] q_ratio;
+	return q_coef_arr;
+}
 
 bool zk_verifier::verify(const char* output_path)
 {
@@ -1137,17 +1197,26 @@ bool zk_verifier::verify(const char* output_path)
 	std::cerr << "GKR Prove Time " << p -> total_time << std::endl;
 	prime_field::field_element *all_sum;
 	all_sum = new prime_field::field_element[slice_number + 1];
-	auto merkle_root_l = p -> prover_vpd_prepare();
-	auto merkle_root_h = p -> prover_vpd_prepare_post_gkr(all_pub_mask, r_0, one_minus_r_0, C.circuit[0].bit_length, alpha_beta_sum - p->Zu * p->sumRc.eval(p->preu1) + all_mask_sum, all_sum);
+	auto merkle_root_l = (p -> poly_prover).commit_private_array(p -> circuit_value[0], C.circuit[0].bit_length, p -> all_pri_mask);
+	
+	q_eval_real = new prime_field::field_element[1 << C.circuit[0].bit_length];
+	dfs_for_public_eval(0, prime_field::field_element(1), r_0, one_minus_r_0, C.circuit[0].bit_length, 0);
+	auto merkle_root_h = (p -> poly_prover).commit_public_array(all_pub_mask, q_eval_real, C.circuit[0].bit_length, alpha_beta_sum - p->Zu * p->sumRc.eval(p->preu1) + all_mask_sum, all_sum);
+	delete[] q_eval_real;
 	proof_size += 2 * sizeof(__hhash_digest);
 	VPD_randomness = r_0;
 	one_minus_VPD_randomness = one_minus_r_0;
-	bool input_0_verify = vpd_verify(all_sum, verification_time, proof_size, p -> total_time, merkle_root_l, merkle_root_h);//input_vpd::verify(r_0_mpz, digest_input.first[0], digest_input.second[0], p -> Zu.to_gmp_class(), input_0_mpz, witnesses_0.first, witnesses_0.second);
+	poly_ver.p = &(p -> poly_prover);
+	
+	prime_field::field_element *public_array = public_array_prepare(r_0, one_minus_r_0, C.circuit[0].bit_length);
+	
+	bool input_0_verify = poly_ver.verify_poly_commitment(all_sum, C.circuit[0].bit_length, public_array, all_pub_mask, verification_time, proof_size, p -> total_time, merkle_root_l, merkle_root_h);
 
 	delete[] r_0;
 	delete[] r_1;
 	delete[] one_minus_r_0;
 	delete[] one_minus_r_1;
+	p -> total_time += (p -> poly_prover).total_time;
 	if(!(input_0_verify))
 	{
 		fprintf(stderr, "Verification fail, input vpd.\n");
