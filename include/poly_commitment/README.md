@@ -27,7 +27,7 @@ public:
   __hhash_digest commit_public_array(std::vector<prime_field::field_element> &all_pub_msk, prime_field::field_element *public_array, int r_0_len, prime_field::field_element target_sum, prime_field::field_element *all_sum);
 };
 ```
-To use this two classes, you first need to instantiate them in the following
+To use these two classes, you first need to instantiate them in the following
 
 ```c++
   poly_commit_verifier poly_verifier;
@@ -39,7 +39,7 @@ and need to assign the pointer of prover to the verifier, so that the verifier i
 verifier.p = &prover;
 ```
 
-Suppose the verifier has it's own public array, the prover have the same public array and it's own private array
+Suppose the verifier has it's own public array, the prover have the same public array and it's own private array:
 
 ```c++
 \\verifier side definition
@@ -49,7 +49,7 @@ prime_field::field_element *public_array;
 prime_field::field_element *public_array, *private_array;
 ```
 
-Next, the prover need to commit to the private array in the following way:
+First step, the prover need to commit to the private array in the following way:
 
 ```c++
 auto merkle_root_l = poly_prover.commit_private_array(private_array, log_length, all_pri_mask);
@@ -57,7 +57,9 @@ auto merkle_root_l = poly_prover.commit_private_array(private_array, log_length,
 
 Here the variable ```all_pri_mask``` is used in our own project, and you can leave it as an empty vector. And we assume the length of the private array is ```1 << log_length```.
 
-The verifier get the variable value ```merkle_root_l```, and prover get a commitment on the public array and the projected inner product value:
+The verifier get the variable value ```merkle_root_l```. 
+
+Second step, the prover get a commitment on the public array and the projected inner product value:
 
 ```c++
 //slice_number is defined in infrastructure/constants.h
@@ -71,11 +73,14 @@ Here ```all_pub_mask``` is used in our own project, and you can leave it as an e
 
 Now all commitments are done, both verifier and prover shares ```merkle_root_h, merkle_root_l``` and the claimed inner product ```inner_product_sum```.
 
-To verify the claim, the verifier runs:
+
+Third step, to verify the claim, the verifier runs:
 
 ```c++
 processed_public_array = public_array_prepare_generic(public_array, log_length);
 poly_ver.verify_poly_commitment(all_sum, log_length, processed_public_array, all_pub_mask, verification_time, proof_size, prover_time, merkle_root_l, merkle_root_h);
 ```
+
+Here ```all_sum``` sums to ```inner_product_sum```, so we don't need to pass ```inner_product_sum``` to the verification routine.
 
 It will return a boolean value, indicating the verification result.
