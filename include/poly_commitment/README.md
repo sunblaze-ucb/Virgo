@@ -10,7 +10,7 @@ Suggested header file:
 #include "infrastructure/my_hhash.h"
 ```
 
-The vector commitment scheme are divided into two classes in the following:
+The vector commitment scheme is divided into two classes in the following:
 
 ```c++
 class poly_commit_verifier
