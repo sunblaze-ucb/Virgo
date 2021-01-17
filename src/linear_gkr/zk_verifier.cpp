@@ -870,7 +870,18 @@ void dfs_coef(int dep, prime_field::field_element val, prime_field::field_elemen
     }
 }
 
-prime_field::field_element* public_array_prepare(prime_field::field_element *r, prime_field::field_element *one_minus_r, int log_length)
+prime_field::field_element* public_array_prepare_generic(prime_field::field_element *public_array, int log_length)
+{
+	prime_field::field_element *q_coef_arr = new prime_field::field_element[1 << log_length];
+	int coef_slice_size = (1 << (log_length - log_slice_number));
+	for(int i = 0; i < (1 << log_slice_number); ++i)
+	{
+		inverse_fast_fourier_transform(&public_array[i * coef_slice_size], coef_slice_size, coef_slice_size, prime_field::get_root_of_unity(log_length - log_slice_number), &q_coef_arr[i * coef_slice_size]);
+	}
+	return q_coef_arr;
+}
+
+prime_field::field_element* public_array_prepare(prime_field::field_element *r, prime_field::field_element *one_minus_r, int log_length, prime_field::field_element *q_eval_real)
 {
 	q_eval_verifier = new prime_field::field_element[(1 << (log_length - log_slice_number))];
     q_ratio = new prime_field::field_element[(1 << log_slice_number) + 1];
@@ -887,6 +898,7 @@ prime_field::field_element* public_array_prepare(prime_field::field_element *r, 
 		for(int j = 0; j < coef_slice_size; ++j)
 		{
 			q_coef_arr[i * coef_slice_size + j] = q_coef_verifier[j] * q_ratio[i];
+			assert(q_eval_real[i * coef_slice_size + j] == q_ratio[i] * q_eval_verifier[j]);
 		}
 	}
 	delete[] q_coef_verifier;
@@ -1202,16 +1214,17 @@ bool zk_verifier::verify(const char* output_path)
 	q_eval_real = new prime_field::field_element[1 << C.circuit[0].bit_length];
 	dfs_for_public_eval(0, prime_field::field_element(1), r_0, one_minus_r_0, C.circuit[0].bit_length, 0);
 	auto merkle_root_h = (p -> poly_prover).commit_public_array(all_pub_mask, q_eval_real, C.circuit[0].bit_length, alpha_beta_sum - p->Zu * p->sumRc.eval(p->preu1) + all_mask_sum, all_sum);
-	delete[] q_eval_real;
+	
 	proof_size += 2 * sizeof(__hhash_digest);
 	VPD_randomness = r_0;
 	one_minus_VPD_randomness = one_minus_r_0;
 	poly_ver.p = &(p -> poly_prover);
 	
-	prime_field::field_element *public_array = public_array_prepare(r_0, one_minus_r_0, C.circuit[0].bit_length);
+	prime_field::field_element *public_array = public_array_prepare(r_0, one_minus_r_0, C.circuit[0].bit_length, q_eval_real);
+	//prime_field::field_element *public_array = public_array_prepare_generic(q_eval_real, C.circuit[0].bit_length);
 	
 	bool input_0_verify = poly_ver.verify_poly_commitment(all_sum, C.circuit[0].bit_length, public_array, all_pub_mask, verification_time, proof_size, p -> total_time, merkle_root_l, merkle_root_h);
-
+	delete[] q_eval_real;
 	delete[] r_0;
 	delete[] r_1;
 	delete[] one_minus_r_0;
