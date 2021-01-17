@@ -1,7 +1,5 @@
 # Guide to use this vector commitment
 
-The vector commitment scheme are divided into two classes in the following:
-
 Suggested header file:
 ```c++
 #include "poly_commitment/poly_commit.h"
@@ -11,6 +9,8 @@ Suggested header file:
 #include "linear_gkr/prime_field.h"
 #include "infrastructure/my_hhash.h"
 ```
+
+The vector commitment scheme are divided into two classes in the following:
 
 ```c++
 class poly_commit_verifier
