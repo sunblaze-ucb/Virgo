@@ -25,8 +25,8 @@ It's a gate that output the summation of previous layer. A simple use case is ma
 
 ## Example
 ```
-3 \\two layers
+3 \\ three layers
 4 3 0 1 1 3 1 1 1 3 2 1 1 3 3 1 1
-2 0 0 0 1 1 1 2 3 \\first gate is addition, and second is a multiplication
-1 1 0 0 1 \\this is the output layer, it's a multiplication gate
+2 0 0 0 1 1 1 2 3 \\ first gate is addition, and second is a multiplication
+1 1 0 0 1 \\ this is the output layer, it's a multiplication gate
 ```
