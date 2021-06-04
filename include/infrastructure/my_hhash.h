@@ -11,14 +11,17 @@
 class __hhash_digest
 {
 public:
-    __m128i h0, h1;
+    unsigned char data[256 / 8];
 };
 
 inline bool equals(const __hhash_digest &a, const __hhash_digest &b)
 {
-    __m128i v0 = _mm_xor_si128(a.h0, b.h0);
-    __m128i v1 = _mm_xor_si128(a.h1, b.h1);
-    return _mm_test_all_zeros(v0, v0) && _mm_test_all_zeros(v1, v1);
+    bool result = true;
+    for(int i = 0; i < 256 / 8; ++i)
+    {
+        result &= (a.data[i] == b.data[i]);
+    }
+    return result;
 }
 
 inline void my_hhash(const void* src, void* dst)

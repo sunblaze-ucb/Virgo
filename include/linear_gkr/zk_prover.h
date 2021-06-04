@@ -16,6 +16,8 @@
 class zk_prover
 {
 public:
+
+	int log_num_verifier, log_num_degree;
 	poly_commit::poly_commit_prover poly_prover;
 	/** @name Basic
 	* Basic information and variables about the arithmetic circuit C.*/

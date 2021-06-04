@@ -224,7 +224,7 @@ bool merkle_tree_consistency_check(__hhash_digest *merkle, int merkle_leaf_count
 	}
 	return true;
 }
-std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_element> >, std::vector<__hhash_digest> > fri::request_step_commit(int lvl, long long pow, int& new_size)
+std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_element> >, std::vector<__hhash_digest> > fri::request_step_commit(int lvl, long long pow, std::vector<fiat_shamir> &verifier_fs)
 {
 	/*
 	if(!merkle_tree_consistency_check(witness_merkle[0], witness_merkle_size[0]))
@@ -244,7 +244,7 @@ std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_e
 		}
 	}
 	 */
-	new_size = 0;
+	//new_size = 0;
 	//quad residue is guaranteed by the construction of cpd.rs_codeword_mapping
 	int pow_0;
 	std::vector<std::pair<prime_field::field_element, prime_field::field_element> > value_vec;
@@ -264,7 +264,14 @@ std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_e
 	}
 	//this can be compressed into one by random linear combination
 	if(!visited_element)
-	    new_size += sizeof(prime_field::field_element);
+	{
+		prime_field::field_element dummy;
+		for(int i = 0; i < verifier_fs.size(); ++i)
+		{
+			verifier_fs[i].update((const char*)&dummy, sizeof(prime_field::field_element));
+		}
+	    //new_size += sizeof(prime_field::field_element);
+	}
 	pow_0 = cpd.rs_codeword_msk_mapping[lvl][pow];
 	value_vec.push_back(std::make_pair(cpd.rs_codeword_msk[lvl][pow_0], cpd.rs_codeword_msk[lvl][pow_0 + 1]));
 	std::vector<__hhash_digest> com_hhash;
@@ -277,7 +284,11 @@ std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_e
 	{
 		if(!visited[lvl][pow_0 ^ 1])
 		{
-			new_size += sizeof(__hhash_digest);
+			//new_size += sizeof(__hhash_digest);
+			for(int i = 0; i < verifier_fs.size(); ++i)
+			{
+				verifier_fs[i].update((const char*)&cpd.merkle[lvl][pow_0 ^ 1], sizeof(__hhash_digest));
+			}
 			visited[lvl][pow_0 ^ 1] = true;
 			visited[lvl][pow_0] = true;
 		}

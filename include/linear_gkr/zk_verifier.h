@@ -7,11 +7,16 @@
 #include "linear_gkr/polynomial.h"
 #include <utility>
 #include "poly_commitment/poly_commit.h"
+#include "infrastructure/fiat_shamir.h"
+#include <vector>
 
 class zk_verifier
 {
 public:
+	int log_num_verifier, log_num_degree;
 	poly_commit::poly_commit_verifier poly_ver;
+	
+	std::vector<fiat_shamir> verifiers_fs;
 	/** @name Randomness&Const 
 	* Storing randomness or constant for simplifying computation/
 	*/

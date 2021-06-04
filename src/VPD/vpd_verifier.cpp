@@ -33,9 +33,6 @@ inline bool verify_merkle(__hhash_digest h, std::vector<__hhash_digest> merkle_p
         memcpy(&data[0], data_ele, sizeof(__hhash_digest));
         data[1] = value_h;
         my_hhash(data, &value_h);
-        unsigned long long *h0, *h1;
-        h0 = (unsigned long long *)&value_h.h0;
-        h1 = (unsigned long long *)&value_h.h1;
     }
 	return equals(h, cur_hhash) && equals(value_h, merkle_path[len - 1]);
 }
@@ -43,7 +40,10 @@ inline bool verify_merkle(__hhash_digest h, std::vector<__hhash_digest> merkle_p
 prime_field::field_element *mask_q_coef;
 
 //return the hhash array of commitments, randomness and final small polynomial (represented by rscode)
-poly_commit::ldt_commitment poly_commit::poly_commit_prover::commit_phase(int log_length)
+
+#include "infrastructure/fiat_shamir.h"
+
+poly_commit::ldt_commitment poly_commit::poly_commit_prover::commit_phase(int log_length, fiat_shamir &verifier_fs)
 {
     //Prover do the work
     std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
@@ -57,7 +57,7 @@ poly_commit::ldt_commitment poly_commit::poly_commit_prover::commit_phase(int lo
 	while(codeword_size > (1 << rs_code_rate))
 	{
         assert(ptr < log_length + rs_code_rate - log_slice_number);
-		randomness[ptr] = prime_field::random();
+		randomness[ptr] = verifier_fs.get_rand(1)[0];
 		ret[ptr] = fri::commit_phase_step(randomness[ptr]);
 		codeword_size /= 2;
 		ptr++;
@@ -77,7 +77,7 @@ poly_commit::ldt_commitment poly_commit::poly_commit_prover::commit_phase(int lo
 	return com;
 }
 
-bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::field_element* all_sum, int log_length, prime_field::field_element *public_array, std::vector<prime_field::field_element> &all_pub_mask, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h)
+bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::field_element* all_sum, int log_length, prime_field::field_element *public_array, std::vector<prime_field::field_element> &all_pub_mask, double &v_time, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h, std::vector<fiat_shamir> &verifier_fs)
 {
     auto all_pub_msk_arr = new prime_field::field_element[all_pub_mask.size()];
 	for(int i = 0; i < all_pub_mask.size(); ++i)
@@ -95,10 +95,23 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
     fscanf(fft_gkr_result, "%f%d%f", &v_time_fft,&proof_size_fft,&p_time_fft);
     v_time += v_time_fft;
     p_time += p_time_fft;
-    proof_size += proof_size_fft;
+
+    char *padding = new char[proof_size_fft];
+    for(int i = 0; i < proof_size_fft; ++i)
+        padding[i] = 0;
+    for(int i = 0; i < verifier_fs.size(); ++i)
+        verifier_fs[i].update(padding, proof_size_fft);
+    delete[] padding;
+
     fclose(fft_gkr_result);
 	
-    auto com = p -> commit_phase(log_length);
+    auto com = p -> commit_phase(log_length, verifier_fs[0]);
+
+    for(int i = 0; i < verifier_fs.size(); ++i)
+    {
+        verifier_fs[i].update((const char*)com.commitment_hhash, sizeof(__hhash_digest) * com.mx_depth);
+        verifier_fs[i].update((const char*)com.randomness, sizeof(prime_field::field_element) * com.mx_depth);
+    }
     
     int coef_slice_size = (1 << (log_length - log_slice_number));
 
@@ -164,8 +177,12 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
                 alpha_l = fri::request_init_value_with_merkle(s0_pow, s1_pow, new_size, 0);
                 alpha_h = fri::request_init_value_with_merkle(s0_pow, s1_pow, new_size, 1);
 
-                proof_size += new_size; //both h and p
-                
+//                proof_size += new_size; //both h and p
+                for(int g = 0; g < verifier_fs.size(); ++g)
+                {
+                    verifier_fs[g].update((const char*)&alpha_l, sizeof(prime_field::field_element));
+                    verifier_fs[g].update((const char*)&alpha_h, sizeof(prime_field::field_element));
+                }
                 t0 = std::chrono::high_resolution_clock::now();
                 if(!verify_merkle(merkle_tree_l, alpha_l.second, alpha_l.second.size(), min(s0_pow, s1_pow), alpha_l.first))
                     return false;
@@ -174,9 +191,9 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
                 t1 = std::chrono::high_resolution_clock::now();
                 time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0);
                 v_time += time_span.count();
-                beta = fri::request_step_commit(0, pow / 2, new_size);
+                beta = fri::request_step_commit(0, pow / 2, verifier_fs);
 
-                proof_size += new_size;
+                //proof_size += new_size;
                 
                 t0 = std::chrono::high_resolution_clock::now();
                 if(!verify_merkle(com.commitment_hhash[0], beta.second, beta.second.size(), pow / 2, beta.first))
@@ -286,9 +303,9 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
                     alpha = beta;
                 }
                 
-                beta = fri::request_step_commit(i, pow / 2, new_size);
+                beta = fri::request_step_commit(i, pow / 2, verifier_fs);
 
-                proof_size += new_size;
+                //proof_size += new_size;
                 
                 t0 = std::chrono::high_resolution_clock::now();
                 if(!verify_merkle(com.commitment_hhash[i], beta.second, beta.second.size(), pow / 2, beta.first))

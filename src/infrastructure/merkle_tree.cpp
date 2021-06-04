@@ -56,18 +56,30 @@ void merkle_tree::merkle_tree_prover::create_tree(void* src_data, int ele_num, _
     }
 }
 
-bool merkle_tree::merkle_tree_verifier::verify_claim(__m128i root_hhash, const void* tree, __m128i hhash_element, int pos_element_arr)
+
+std::pair<std::vector<__hhash_digest>, bool> merkle_tree::merkle_tree_verifier::verify_claim(__hhash_digest root_hhash, const __hhash_digest* tree, __hhash_digest leaf_element, int pos_element, int merkle_tree_size)
 {
-    int pos_element = pos_element_arr + size_after_padding;
-    __m128i data[2];
-    while(pos_element != 1)
+    std::vector<__hhash_digest> hash_path;
+    __hhash_digest data[2];
+    int leaf_addr = pos_element + merkle_tree_size;
+    bool result = true;
+    while(leaf_addr != 1)
     {
-        data[pos_element & 1] = hhash_element;
-        data[(pos_element & 1) ^ 1] = ((__m128i*)tree)[pos_element ^ 1];
-        my_hhash(data, &hhash_element);
-        pos_element /= 2;
+        if((leaf_addr & 1) == 1)
+		{
+			data[0] = tree[leaf_addr ^ 1];
+			data[1] = leaf_element;
+		}
+        else
+        {
+            data[0] = leaf_element;
+            data[1] = tree[leaf_addr ^ 1];
+        }
+        hash_path.push_back(tree[leaf_addr ^ 1]);
+        my_hhash(data, &leaf_element);
+        leaf_addr /= 2;
+        result &= equals(leaf_element, tree[leaf_addr]);
+        assert(result);
     }
-    long long *root_hhash_ptr = (long long*)&root_hhash;
-    long long *answer_hhash_ptr = (long long*)&hhash_element;
-    return root_hhash_ptr[0] == answer_hhash_ptr[0] && root_hhash_ptr[1] == answer_hhash_ptr[1];
+    return std::make_pair(hash_path, result);
 }

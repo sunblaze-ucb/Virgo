@@ -6,6 +6,8 @@
 #include <immintrin.h>
 #include <wmmintrin.h>
 #include "my_hhash.h"
+#include <utility>
+#include <vector>
 
 namespace merkle_tree
 {
@@ -20,7 +22,7 @@ namespace merkle_tree_prover
 namespace merkle_tree_verifier
 {
     //Merkle tree functions used by the verifier
-    bool verify_claim(__m128i root_hhash, const void* tree, __m128i hhash_element, int pos_element);
+    std::pair<std::vector<__hhash_digest>, bool> verify_claim(__hhash_digest root_hhash, const __hhash_digest* tree, __hhash_digest leaf_element, int pos_element, int merkle_tree_size);
 }
 }
 

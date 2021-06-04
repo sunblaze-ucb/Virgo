@@ -8,6 +8,7 @@
 #include "VPD/fri.h"
 #include "VPD/vpd_prover.h"
 #include <chrono>
+#include "infrastructure/fiat_shamir.h"
 namespace poly_commit
 {
 	extern prime_field::field_element *all_pri_msk_arr;
@@ -349,7 +350,7 @@ namespace poly_commit
 			//printf("PostGKR prepare time 1 %lf\n", time_span.count());
 			return ret;
 		}
-		ldt_commitment commit_phase(int log_length);
+		ldt_commitment commit_phase(int log_length, fiat_shamir &verifier_fs);
 	};
 	
 
@@ -357,7 +358,7 @@ namespace poly_commit
 	{
 	public:
 		poly_commit_prover *p;
-		bool verify_poly_commitment(prime_field::field_element* all_sum, int log_length, prime_field::field_element *public_array, std::vector<prime_field::field_element> &all_pub_mask, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h);
+		bool verify_poly_commitment(prime_field::field_element* all_sum, int log_length, prime_field::field_element *public_array, std::vector<prime_field::field_element> &all_pub_mask, double &v_time, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h, std::vector<fiat_shamir> &verifier_fs);
 	};
 }
 #endif

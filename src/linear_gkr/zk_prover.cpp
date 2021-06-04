@@ -9,6 +9,7 @@
 #include <queue>
 #include <cstring>
 
+std::vector<prime_field::field_element> rou;
 prime_field::field_element from_string(const char* str)
 {
 	prime_field::field_element ret = prime_field::field_element(0);
@@ -53,6 +54,16 @@ prime_field::field_element zk_prover::V_res(const prime_field::field_element* on
 
 prime_field::field_element* zk_prover::evaluate()
 {
+	rou.resize(1 << C.circuit[2].bit_length);
+
+	prime_field::field_element rou_base = prime_field::get_root_of_unity(C.circuit[2].bit_length);
+
+	rou[0] = prime_field::field_element(1);
+	for(int i = 1; i < (1 << C.circuit[2].bit_length); ++i)
+	{
+		rou[i] = rou[i - 1] * rou_base;
+	}
+
 	std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
 	circuit_value[0] = new prime_field::field_element[(1 << C.circuit[0].bit_length)];
 	for(int i = 0; i < (1 << C.circuit[0].bit_length); ++i)
@@ -142,6 +153,10 @@ prime_field::field_element* zk_prover::evaluate()
 				assert(u >= 0 && u < ((1 << C.circuit[i - 1].bit_length)));
 				circuit_value[i][g] = circuit_value[i - 1][u] * (prime_field::field_element(1) - circuit_value[i - 1][v]);
 			}
+			else if(ty == 14)
+			{
+				circuit_value[i][g] = circuit_value[i - 1][u] * rou[v];
+			}
 			else
 			{
 				assert(false);
@@ -166,7 +181,7 @@ void zk_prover::generate_maskpoly_pre_rho(int length, int degree)
 	//last 6 for u_n^5, u_n^4, u_n^3 and v_n^5, v_n^4, v_n^3;
 	maskpoly = new prime_field::field_element[length * degree + 1 + 6];
 	for(int i = 0; i < length * degree + 1 + 6; i++){
-		maskpoly[i] = prime_field::random();
+		maskpoly[i] = prime_field::field_element(0);
 		all_pri_mask.push_back(maskpoly[i]);
 	}
 }
@@ -230,15 +245,15 @@ void zk_prover::generate_maskR(int layer_id){
 	Iuv = prime_field::field_element(1);
 	if(layer_id > 1){
 		for(int i = 0; i < 6; i++)
-			maskR[i] = prime_field::random();
+			maskR[i] = prime_field::field_element(0);
 		sumRc.a = maskR[2] + maskR[2];
 		sumRc.b = maskR[1] + maskR[1] + maskR[5];
 		sumRc.c = maskR[0] + maskR[0] + maskR[3] + maskR[4];
 	} 
 	//input randomness
 	maskr.resize(2);
-	maskr[0] = prime_field::random();
-	maskr[1] = prime_field::random();
+	maskr[0] = prime_field::field_element(0);
+	maskr[1] = prime_field::field_element(0);
 	if(layer_id == 1){
 		//a + bx;
 		maskR[0] = maskr[0];
@@ -333,10 +348,13 @@ void zk_prover::sumcheck_init(int layer_id, int bit_length_g, int bit_length_u, 
 }
 
 
-bool gate_meet[14];
+bool gate_meet[15];
+
+
+
 void zk_prover::init_array(int max_bit_length)
 {
-	memset(gate_meet, 0, sizeof(bool) * 14);
+	memset(gate_meet, 0, sizeof(bool) * 15);
 	add_mult_sum = new linear_poly[(1 << max_bit_length)];
 	V_mult_add = new linear_poly[(1 << max_bit_length)];
 	addV_array = new linear_poly[(1 << max_bit_length)];
@@ -576,6 +594,19 @@ void zk_prover::sumcheck_phase1_init()
 				auto tmp = (beta_g_r0_fhalf[i & mask_fhalf] * beta_g_r0_shalf[i >> first_half] 
 						+ beta_g_r1_fhalf[i & mask_fhalf] * beta_g_r1_shalf[i >> first_half]);
 				add_mult_sum[u].b = (add_mult_sum[u].b + tmp);
+				break;
+			}
+			case 14://mult rou^v
+			{
+				if(!gate_meet[C.circuit[sumcheck_layer_id].gates[i].ty])
+				{
+					printf("first meet %d gate\n", C.circuit[sumcheck_layer_id].gates[i].ty);
+					printf("%d\n", (int) rou.size());
+					gate_meet[C.circuit[sumcheck_layer_id].gates[i].ty] = true;
+				}
+				auto tmp = (beta_g_r0_fhalf[i & mask_fhalf] * beta_g_r0_shalf[i >> first_half] 
+						+ beta_g_r1_fhalf[i & mask_fhalf] * beta_g_r1_shalf[i >> first_half]);
+				add_mult_sum[u].b = add_mult_sum[u].b + tmp * rou[v];
 				break;
 			}
 			default:
@@ -961,6 +992,15 @@ void zk_prover::sumcheck_phase2_init(prime_field::field_element previous_random,
 								+ beta_g_r1_fhalf[i & mask_g_fhalf] * beta_g_r1_shalf[i >> first_g_half]);
 				auto tmp = tmp_g * tmp_u;
 				addV_array[v].b = (addV_array[v].b + tmp * v_u);
+				break;
+			}
+			case 14:
+			{
+				auto tmp_u = beta_u_fhalf[u & mask_fhalf] * beta_u_shalf[u >> first_half];
+				auto tmp_g = (beta_g_r0_fhalf[i & mask_g_fhalf] * beta_g_r0_shalf[i >> first_g_half] 
+								+ beta_g_r1_fhalf[i & mask_g_fhalf] * beta_g_r1_shalf[i >> first_g_half]);
+				auto tmp = tmp_g * tmp_u;
+				addV_array[0].b = (addV_array[0].b + tmp * v_u * rou[v]);
 				break;
 			}
 			default:

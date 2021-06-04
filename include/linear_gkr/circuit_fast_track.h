@@ -29,8 +29,10 @@ public:
 	int log_block_size;
 	int repeat_num;
 	int log_repeat_num;
+	bool is_all_direct_relay;
 	layer()
 	{
+		is_all_direct_relay = false;
 		is_parallel = false;
 		gates = NULL;
 		bit_length = 0;
@@ -52,7 +54,6 @@ public:
 	}
 	~layered_circuit()
 	{
-		
 	}
 };
 

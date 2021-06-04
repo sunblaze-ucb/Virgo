@@ -32,13 +32,6 @@ namespace prime_field
         ret.img = 0;
         return ret;
     }
-    field_element random()
-    {
-        field_element ret;
-        ret.real = (unsigned long long)rand() % mod;
-        ret.img = (unsigned long long)rand() % mod;
-        return ret;
-    }
     bool field_element::operator != (const field_element &b) const
     {
         return real != b.real || img != b.img;
@@ -123,5 +116,18 @@ namespace prime_field
         printf("%llu %llu\n", c.img, c.real);
         auto t1 = std::chrono::high_resolution_clock::now();
         return std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0).count();
+    }
+    field_element from_hash(const __hhash_digest &h)
+    {
+        prime_field::field_element ret;
+        ret.img = ret.real = 0;
+        for(int i = 0; i < 8; ++i)
+        {
+            ret.img = ret.img ^ (h.data[i] << (8 * i)) ^ (h.data[i + 8] << (8 * i));
+            ret.real = ret.real ^ (h.data[i + 16] << (8 * i)) ^ (h.data[i + 24] << (8 * i));
+        }
+        ret.img %= prime_field::mod;
+        ret.real %= prime_field::mod;
+        return ret;
     }
 }

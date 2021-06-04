@@ -4,6 +4,7 @@
 #include <utility>
 #include "linear_gkr/prime_field.h"
 #include "infrastructure/constants.h"
+#include "infrastructure/fiat_shamir.h"
 #include <vector>
 
 namespace fri
@@ -85,7 +86,7 @@ namespace fri
 	 * request the merkle proof to lvl-th level oracle, at w^{pow}, will also return it's quad residue's proof.
 	 * returned value is unordered, meaning that one of them is the requested value and the other one is it's qual residue.
 	 */
-	std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_element> >, std::vector<__hhash_digest> > request_step_commit(int lvl, long long pow, int &new_size);
+	std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_element> >, std::vector<__hhash_digest> > request_step_commit(int lvl, long long pow, std::vector<fiat_shamir> &verifier_fs);
 	/*
 	 * Given fold parameter r, return the root of the merkle tree of next level.
 	 * TODO: Plan to remove slice_num, merge all merkle trees, leaf stores value.
