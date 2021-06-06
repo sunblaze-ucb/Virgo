@@ -600,8 +600,8 @@ void zk_prover::sumcheck_phase1_init()
 			{
 				if(!gate_meet[C.circuit[sumcheck_layer_id].gates[i].ty])
 				{
-					printf("first meet %d gate\n", C.circuit[sumcheck_layer_id].gates[i].ty);
-					printf("%d\n", (int) rou.size());
+					//printf("first meet %d gate\n", C.circuit[sumcheck_layer_id].gates[i].ty);
+					//printf("%d\n", (int) rou.size());
 					gate_meet[C.circuit[sumcheck_layer_id].gates[i].ty] = true;
 				}
 				auto tmp = (beta_g_r0_fhalf[i & mask_fhalf] * beta_g_r0_shalf[i >> first_half] 

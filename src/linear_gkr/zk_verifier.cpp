@@ -180,7 +180,7 @@ void zk_verifier::read_circuit(const char *path, const char *meta_path)
 			if(i == 1)
 				C.circuit[0].bit_length = cnt - 1;
 		}
-		fprintf(stderr, "layer %d, bit_length %d\n", i, C.circuit[i].bit_length);
+		//fprintf(stderr, "layer %d, bit_length %d\n", i, C.circuit[i].bit_length);
 		if(C.circuit[i].bit_length > max_bit_length)
 			max_bit_length = C.circuit[i].bit_length;
 	}
@@ -854,8 +854,8 @@ void zk_verifier::self_inner_product_test(prime_field::field_element alpha_beta_
 	//msk
 	int v_mask_size = all_pub_mask.size();
 	int p_mask_size = p -> all_pri_mask.size();
-	std::cout << "get into function" << std::endl;
-	printf("%d\n", v_mask_size);
+	//std::cout << "get into function" << std::endl;
+	//printf("%d\n", v_mask_size);
 	if(v_mask_size != p_mask_size){
 		printf("%s\n", "size is different.");
 	}
@@ -1160,7 +1160,7 @@ bool zk_verifier::verify(const char* output_path)
 				}
 				else
 				{
-					fprintf(stderr, "Verification pass, phase1, circuit %d, current bit %d\n", i, j);
+					//fprintf(stderr, "Verification pass, phase1, circuit %d, current bit %d\n", i, j);
 				}
 				alpha_beta_sum = poly.eval(r_u[j]);
 
@@ -1182,7 +1182,7 @@ bool zk_verifier::verify(const char* output_path)
 				}
 				else
 				{
-					fprintf(stderr, "Verification pass, phase1, circuit %d, current bit %d\n", i, j);
+					//fprintf(stderr, "Verification pass, phase1, circuit %d, current bit %d\n", i, j);
 				}
 				alpha_beta_sum = poly.eval(r_u[j]);
 
@@ -1211,7 +1211,7 @@ bool zk_verifier::verify(const char* output_path)
 				}
 				else
 				{
-					fprintf(stderr, "Verification pass, phase2, circuit level %d, current bit %d\n", i, j);
+					//fprintf(stderr, "Verification pass, phase2, circuit level %d, current bit %d\n", i, j);
 				}
 				alpha_beta_sum = poly.eval(r_v[j]) + direct_relay_value * p -> v_u;
 
@@ -1233,7 +1233,7 @@ bool zk_verifier::verify(const char* output_path)
 				}
 				else
 				{
-					fprintf(stderr, "Verification pass, phase2, circuit level %d, current bit %d\n", i, j);
+					//fprintf(stderr, "Verification pass, phase2, circuit level %d, current bit %d\n", i, j);
 				}
 				alpha_beta_sum = poly.eval(r_v[j]) + direct_relay_value * p -> v_u;
 
