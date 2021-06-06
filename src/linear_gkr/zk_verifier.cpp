@@ -1372,7 +1372,7 @@ bool zk_verifier::verify(const char* output_path)
 		std::cerr << "Verification Time " << verification_time - verification_rdl_time << std::endl;
 		verifiers_fs[0].output("v0_proof.bin");
 		FILE *result = fopen(output_path, "w");
-		fprintf(result, "%lf %lf %lf %lf\n", p -> total_time, verification_time, predicates_calc_time, verification_rdl_time);
+		fprintf(result, "%lf %lf %d\n", p -> total_time, verification_time - verification_rdl_time, verifiers_fs[0].transcript.size());
 		fclose(result);
 	}
 	p -> delete_self();
