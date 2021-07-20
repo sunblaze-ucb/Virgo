@@ -180,8 +180,13 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
 //                proof_size += new_size; //both h and p
                 for(int g = 0; g < verifier_fs.size(); ++g)
                 {
-                    verifier_fs[g].update((const char*)&alpha_l, sizeof(prime_field::field_element));
-                    verifier_fs[g].update((const char*)&alpha_h, sizeof(prime_field::field_element));
+                    verifier_fs[g].update((const char*)alpha_l.first.data(), 2 * alpha_l.first.size() * sizeof(prime_field::field_element));
+                    verifier_fs[g].update((const char*)alpha_h.first.data(), 2 * alpha_l.first.size() * sizeof(prime_field::field_element));
+                    for(int j = 0; j < alpha_l.second.size(); ++j)
+                    {
+                        verifier_fs[g].update((const char*)&alpha_l.second[j], sizeof(__hhash_digest));
+                        verifier_fs[g].update((const char*)&alpha_h.second[j], sizeof(__hhash_digest));
+                    }
                 }
                 t0 = std::chrono::high_resolution_clock::now();
                 if(!verify_merkle(merkle_tree_l, alpha_l.second, alpha_l.second.size(), min(s0_pow, s1_pow), alpha_l.first))

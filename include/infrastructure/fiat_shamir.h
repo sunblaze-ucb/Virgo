@@ -29,6 +29,7 @@ public:
     {
         transcript.insert(transcript.end(), latest_update.begin(), latest_update.end());
         latest_update.clear();
+        transcript.clear();
     }
     void output(const char *output_path)
     {
@@ -43,7 +44,7 @@ public:
 
     void update(const char *data, int size)
     {
-        latest_update.insert(latest_update.end(), data, data + size);
+        //latest_update.insert(latest_update.end(), data, data + size);
     }
 
     __hhash_digest get_hash()
