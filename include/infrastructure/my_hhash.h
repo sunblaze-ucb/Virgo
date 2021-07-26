@@ -7,6 +7,10 @@
 #include <wmmintrin.h>
 #include <cassert>
 #include "flo-shani-aesni/sha256/flo-shani.h"
+#define USESHA3
+extern "C"{
+#include "lib/libXKCP.a.headers/SimpleFIPS202.h"
+}
 
 class __hhash_digest
 {
@@ -23,7 +27,11 @@ inline bool equals(const __hhash_digest &a, const __hhash_digest &b)
 
 inline void my_hhash(const void* src, void* dst)
 {
+#ifdef USESHA3
+    SHA3_256((unsigned char*)dst, (const unsigned char*)src, 64);
+#else
     sha256_update_shani((const unsigned char*)src, 64, (unsigned char*)dst);
+#endif
 }
 
 #endif
