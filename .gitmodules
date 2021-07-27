@@ -1,3 +1,7 @@
 [submodule "include/flo-shani-aesni"]
 	path = include/flo-shani-aesni
 	url = https://github.com/armfazh/flo-shani-aesni
+
+[submodule "include/XKCP"]
+	path = include/XKCP
+	url = https://github.com/XKCP/XKCP.git
