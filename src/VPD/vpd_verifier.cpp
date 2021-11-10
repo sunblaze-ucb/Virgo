@@ -1,7 +1,7 @@
-#include "linear_gkr/zk_verifier.h"
+#include "linear_gkr/verifier.h"
 #include "infrastructure/RS_polynomial.h"
 #include "infrastructure/utility.h"
-#include "linear_gkr/zk_prover.h"
+#include "linear_gkr/prover.h"
 #include "poly_commitment/poly_commit.h"
 #include <iostream>
 #include <cstdio>
@@ -77,7 +77,7 @@ poly_commit::ldt_commitment poly_commit::poly_commit_prover::commit_phase(int lo
 	return com;
 }
 
-bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::field_element* all_sum, int log_length, prime_field::field_element *public_array, std::vector<prime_field::field_element> &all_pub_mask, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h)
+bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::field_element* all_sum, int log_length, prime_field::field_element *public_array, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h)
 {
     auto all_pub_msk_arr = new prime_field::field_element[all_pub_mask.size()];
 	for(int i = 0; i < all_pub_mask.size(); ++i)

@@ -10,8 +10,6 @@ zk_prover p;
 
 int main(int argc, char** argv)
 {
-	//std::cout << "hello world" << std::endl;
-
 	prime_field::init();
 	p.total_time = 0;
 	v.get_prover(&p);

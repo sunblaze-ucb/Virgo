@@ -3,7 +3,7 @@
 #define __zk_verifier
 
 #include "linear_gkr/circuit_fast_track.h"
-#include "linear_gkr/zk_prover.h"
+#include "linear_gkr/prover.h"
 #include "linear_gkr/polynomial.h"
 #include <utility>
 #include "poly_commitment/poly_commit.h"
@@ -40,8 +40,6 @@ public:
 	std::vector<prime_field::field_element> predicates(int depth, prime_field::field_element *r_0, prime_field::field_element *r_1, prime_field::field_element *r_u, prime_field::field_element *r_v, prime_field::field_element alpha, prime_field::field_element beta);
 	prime_field::field_element direct_relay(int depth, prime_field::field_element *r_g, prime_field::field_element *r_u);
 	prime_field::field_element V_in(const prime_field::field_element*, const prime_field::field_element*, prime_field::field_element*, int, int);
-	std::vector<prime_field::field_element> all_pub_mask;
-	prime_field::field_element all_mask_sum; ///<all_mask_sum = all_pub_mask * all_pri_mask;
 	prime_field::field_element *VPD_randomness, *one_minus_VPD_randomness;
 	void self_inner_product_test(prime_field::field_element alpha_beta_sum, prime_field::field_element v_in);
 	/**Test the evaluation of all mask polys after doing random linear combination for them. */

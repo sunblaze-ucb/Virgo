@@ -38,8 +38,7 @@ namespace poly_commit
 	public:
 		double total_time;
 		
-		std::vector<prime_field::field_element> all_pri_mask;
-		__hhash_digest commit_private_array(prime_field::field_element *private_array, int log_array_length, std::vector<prime_field::field_element> private_mask_array)
+		__hhash_digest commit_private_array(prime_field::field_element *private_array, int log_array_length)
 		{
 			total_time = 0;
 			std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
@@ -122,7 +121,7 @@ namespace poly_commit
 			//printf("VPD prepare time %lf\n", time_span.count());
 			return ret;
 		}
-		__hhash_digest commit_public_array(std::vector<prime_field::field_element> &all_pub_msk, prime_field::field_element *public_array, int r_0_len, prime_field::field_element target_sum, prime_field::field_element *all_sum)
+		__hhash_digest commit_public_array(prime_field::field_element *public_array, int r_0_len, prime_field::field_element target_sum, prime_field::field_element *all_sum)
 		{
 			std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
 			assert(pre_prepare_executed);
@@ -357,7 +356,7 @@ namespace poly_commit
 	{
 	public:
 		poly_commit_prover *p;
-		bool verify_poly_commitment(prime_field::field_element* all_sum, int log_length, prime_field::field_element *public_array, std::vector<prime_field::field_element> &all_pub_mask, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h);
+		bool verify_poly_commitment(prime_field::field_element* all_sum, int log_length, prime_field::field_element *public_array, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h);
 	};
 }
 #endif
