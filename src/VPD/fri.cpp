@@ -6,7 +6,7 @@
 #include <utility>
 #include "infrastructure/utility.h"
 #include <algorithm>
-#include "linear_gkr/zk_prover.h"
+#include "linear_gkr/prover.h"
 #include "poly_commitment/poly_commit.h"
 
 //variables
@@ -30,8 +30,8 @@ __hhash_digest* fri::leaf_hash[2];
 prime_field::field_element *fri::r_extended;
 //extern int slice_size, slice_count, slice_real_ele_cnt, mask_position_gap;
 //extern prime_field::field_element *l_eval, *l_coef, *h_coef, *h_eval_arr;
-prime_field::field_element *fri::virtual_oracle_witness, *fri::virtual_oracle_witness_msk;
-int *fri::virtual_oracle_witness_mapping, *fri::virtual_oracle_witness_msk_mapping;
+prime_field::field_element *fri::virtual_oracle_witness;
+int *fri::virtual_oracle_witness_mapping;
 
 __hhash_digest fri::request_init_commit(const int bit_len, const int oracle_indicator)
 {
@@ -265,8 +265,6 @@ std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_e
 	//this can be compressed into one by random linear combination
 	if(!visited_element)
 	    new_size += sizeof(prime_field::field_element);
-	pow_0 = cpd.rs_codeword_msk_mapping[lvl][pow];
-	value_vec.push_back(std::make_pair(cpd.rs_codeword_msk[lvl][pow_0], cpd.rs_codeword_msk[lvl][pow_0 + 1]));
 	std::vector<__hhash_digest> com_hhash;
 	
 	pow_0 = (cpd.rs_codeword_mapping[lvl][pow << log_slice_number] >> (log_slice_number + 1)) + cpd.merkle_size[lvl];
@@ -293,24 +291,18 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 	int nxt_witness_size = (1 << log_current_witness_size_per_slice) / 2;
 	if(cpd.rs_codeword[current_step_no] == NULL)
 		cpd.rs_codeword[current_step_no] = new prime_field::field_element[nxt_witness_size * poly_commit::slice_count];
-	if(cpd.rs_codeword_msk[current_step_no] == NULL)
-		cpd.rs_codeword_msk[current_step_no] = new prime_field::field_element[nxt_witness_size];
 	prime_field::field_element *previous_witness, *previous_witness_msk;
 	int *previous_witness_mapping, *previous_witness_msk_mapping;
 	if(current_step_no == 0)
 	{
 		//virtual oracle
 		previous_witness = virtual_oracle_witness;
-		previous_witness_msk = virtual_oracle_witness_msk;
 		previous_witness_mapping = virtual_oracle_witness_mapping;
-		previous_witness_msk_mapping = virtual_oracle_witness_msk_mapping;
 	}
 	else
 	{
 		previous_witness = cpd.rs_codeword[current_step_no - 1];
-		previous_witness_msk = cpd.rs_codeword_msk[current_step_no - 1];
 		previous_witness_mapping = cpd.rs_codeword_mapping[current_step_no - 1];
-		previous_witness_msk_mapping = cpd.rs_codeword_msk_mapping[current_step_no - 1];
 	}
 	
 	auto inv_2 = prime_field::inv(prime_field::field_element(2));
@@ -375,19 +367,7 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 			pos = qual_res_0;
 		auto inv_mu = L_group[((1 << log_current_witness_size_per_slice) - i) & ((1 << log_current_witness_size_per_slice) - 1)]; 
 		int real_pos = previous_witness_msk_mapping[(pos)];
-		cpd.rs_codeword_msk[current_step_no][i] = inv_2 * ((previous_witness_msk[real_pos] + previous_witness_msk[real_pos + 1]) + inv_mu * r * (previous_witness_msk[real_pos] - previous_witness_msk[real_pos + 1]));
 	}
-	tmp = new prime_field::field_element[nxt_witness_size];
-	cpd.rs_codeword_msk_mapping[current_step_no] = new int[nxt_witness_size];
-	for(int i = 0; i < nxt_witness_size / 2; ++i)
-	{
-		tmp[i << 1 | 0] = cpd.rs_codeword_msk[current_step_no][i];
-		tmp[i << 1 | 1] = cpd.rs_codeword_msk[current_step_no][i + nxt_witness_size / 2];
-		cpd.rs_codeword_msk_mapping[current_step_no][i] = i << 1 | 0;
-		cpd.rs_codeword_msk_mapping[current_step_no][i + nxt_witness_size / 2] = i << 1 | 0; //this is correct
-	}
-	delete[] cpd.rs_codeword_msk[current_step_no];
-	cpd.rs_codeword_msk[current_step_no] = tmp;
 
 	visited[current_step_no] = new bool[nxt_witness_size * 4 * poly_commit::slice_count];
 	memset(visited[current_step_no], false, sizeof(bool) * nxt_witness_size * 4 * poly_commit::slice_count);
@@ -409,13 +389,6 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 			data[1] = htmp;
 			my_hhash(data, &htmp);
 		}
-		int pos = cpd.rs_codeword_msk_mapping[current_step_no][i];
-		data_ele[0] = cpd.rs_codeword_msk[current_step_no][pos];
-		data_ele[1] = cpd.rs_codeword_msk[current_step_no][pos | 1];
-		
-		memcpy(&data[0], data_ele, sizeof(__hhash_digest));
-		data[1] = htmp;
-		my_hhash(data, &htmp);
 		hash_val[i] = htmp;
 	}
 	merkle_tree::merkle_tree_prover::create_tree(hash_val, nxt_witness_size / 2, cpd.merkle[current_step_no], sizeof(__hhash_digest), cpd.merkle[current_step_no] == NULL);

@@ -14,8 +14,7 @@ namespace fri
 		__hhash_digest *merkle[max_fri_depth];
 		int merkle_size[max_fri_depth];
 		prime_field::field_element *rs_codeword[max_fri_depth], *poly_coef[max_fri_depth];
-		prime_field::field_element *rs_codeword_msk[max_fri_depth];
-		int *rs_codeword_mapping[max_fri_depth], *rs_codeword_msk_mapping[max_fri_depth];
+		int *rs_codeword_mapping[max_fri_depth];
 		commit_phase_data()
 		{
 			for(int i = 0; i < max_fri_depth; ++i)
@@ -23,8 +22,6 @@ namespace fri
 				merkle[i] = NULL;
 				rs_codeword[i] = NULL;
 				poly_coef[i] = NULL;
-				rs_codeword_msk[i] = NULL;
-				rs_codeword_msk_mapping[i] = NULL;
 				merkle_size[i] = 0;
 			}
 		}
@@ -39,15 +36,9 @@ namespace fri
 					delete[] rs_codeword[i];
 				if(poly_coef[i] != NULL)
 					delete[] poly_coef[i];
-				if(rs_codeword_msk[i] != NULL)
-					delete[] rs_codeword_msk[i];
-				if(rs_codeword_msk_mapping[i] != NULL)
-					delete[] rs_codeword_msk_mapping[i];
 				merkle[i] = NULL;
 				rs_codeword[i] = NULL;
 				poly_coef[i] = NULL;
-				rs_codeword_msk[i] = NULL;
-				rs_codeword_msk_mapping[i] = NULL;
 				merkle_size[i] = 0;
 			}
 		}
@@ -71,11 +62,11 @@ namespace fri
 	extern bool* visited_init[2];
 	extern bool* visited_witness[2];
 	extern prime_field::field_element *virtual_oracle_witness;
-	extern int *virtual_oracle_witness_mapping, *virtual_oracle_witness_msk_mapping;
+	extern int *virtual_oracle_witness_mapping;
 	
 	extern prime_field::field_element *r_extended;
 	extern __hhash_digest *leaf_hash[2];
-	extern prime_field::field_element *virtual_oracle_witness, *virtual_oracle_witness_msk;
+	extern prime_field::field_element *virtual_oracle_witness;
 	
 	//Given private input, calculate the first oracle commitment
 	__hhash_digest request_init_commit(const int bit_len, const int oracle_indicator);

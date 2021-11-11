@@ -40,8 +40,6 @@ inline bool verify_merkle(__hhash_digest h, std::vector<__hhash_digest> merkle_p
 	return equals(h, cur_hhash) && equals(value_h, merkle_path[len - 1]);
 }
 
-prime_field::field_element *mask_q_coef;
-
 //return the hhash array of commitments, randomness and final small polynomial (represented by rscode)
 poly_commit::ldt_commitment poly_commit::poly_commit_prover::commit_phase(int log_length)
 {
@@ -78,13 +76,7 @@ poly_commit::ldt_commitment poly_commit::poly_commit_prover::commit_phase(int lo
 }
 
 bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::field_element* all_sum, int log_length, prime_field::field_element *public_array, double &v_time, int &proof_size, double &p_time, __hhash_digest merkle_tree_l, __hhash_digest merkle_tree_h)
-{
-    auto all_pub_msk_arr = new prime_field::field_element[all_pub_mask.size()];
-	for(int i = 0; i < all_pub_mask.size(); ++i)
-		all_pub_msk_arr[i] = all_pub_mask[i];
-	prime_field::field_element *all_pub_msk_coef = new prime_field::field_element[all_pub_mask.size()];
-    inverse_fast_fourier_transform(all_pub_msk_arr, all_pub_mask.size(), all_pub_mask.size(), prime_field::get_root_of_unity(mylog(all_pub_mask.size())), all_pub_msk_coef);
-	
+{	
     //prepare ratio and array q
     char *command = new char[1024];
     sprintf(command, "./fft_gkr %d log_fftgkr.txt", log_length - log_slice_number);
@@ -105,7 +97,6 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
     for(int rep = 0; rep < 33; ++rep)
     {
         int slice_count = 1 << log_slice_number;
-        slice_count++; //for masks
         int slice_size = (1 << (log_length + rs_code_rate - log_slice_number));
 
         std::chrono::high_resolution_clock::time_point t0, t1;
@@ -184,34 +175,24 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
                 
                 auto inv_mu = prime_field::inv(fast_pow(root_of_unity, pow / 2));
                 alpha.first.clear(), alpha.second.clear();
-                int mask_position_gap = slice_size / all_pub_mask.size();
-                prime_field::field_element rou[2], x[2], inv_x[2], msk_rou[2];
+                prime_field::field_element rou[2], x[2], inv_x[2];
                 x[0] = prime_field::get_root_of_unity(mylog(slice_size));
                 x[1] = prime_field::get_root_of_unity(mylog(slice_size));
                 x[0] = prime_field::fast_pow(x[0], s0_pow);
                 x[1] = prime_field::fast_pow(x[1], s1_pow);
-                msk_rou[0] = prime_field::fast_pow(x[0], slice_size / mask_position_gap);
-                msk_rou[1] = prime_field::fast_pow(x[1], slice_size / mask_position_gap);
                 rou[0] = prime_field::fast_pow(x[0], slice_size >> rs_code_rate);
                 rou[1] = prime_field::fast_pow(x[1], slice_size >> rs_code_rate);
                 inv_x[0] = prime_field::inv(x[0]);
                 inv_x[1] = prime_field::inv(x[1]);
-                prime_field::field_element inv_msk_H;
                 prime_field::field_element inv_H;
-                inv_msk_H = prime_field::inv(prime_field::field_element(slice_size / mask_position_gap));
                 inv_H = prime_field::inv(prime_field::field_element(slice_size >> rs_code_rate));
                 alpha.first.resize(slice_count);
 
-                prime_field::field_element q_eval_0_msk, q_eval_1_msk, x0, x1, tst0, tst1;
+                prime_field::field_element x0, x1, tst0, tst1;
                 prime_field::field_element q_eval_0_val, q_eval_1_val;
-                tst0 = tst1 = q_eval_0_msk = q_eval_1_msk = prime_field::field_element(0);
+                tst0 = tst1 = prime_field::field_element(0);
                 q_eval_0_val = q_eval_1_val = prime_field::field_element(0);
                 x0 = x1 = prime_field::field_element(1);
-                for(int k = 0; k < all_pub_mask.size(); ++k)
-                {
-                    q_eval_0_msk = q_eval_0_msk + x0 * all_pub_msk_coef[k]; x0 = x0 * x[0];
-                    q_eval_1_msk = q_eval_1_msk + x1 * all_pub_msk_coef[k]; x1 = x1 * x[1];
-                }
                 for(int j = 0; j < slice_count; ++j)
                 {
                 	tst0 = tst1 = prime_field::field_element(0);
@@ -225,26 +206,10 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
 		            }
                     prime_field::field_element q_eval_0 = prime_field::field_element(0), x0 = prime_field::field_element(1);
                     prime_field::field_element q_eval_1 = prime_field::field_element(0), x1 = prime_field::field_element(1);
-                    if(j != slice_count - 1)
-                    {
-                        q_eval_0 = q_eval_0_val;
-                        q_eval_1 = q_eval_1_val;
-                    }
-                    else
-                    {
-                        q_eval_0 = q_eval_0_msk;
-                        q_eval_1 = q_eval_1_msk;
-                    }
+                    q_eval_0 = q_eval_0_val;
+                    q_eval_1 = q_eval_1_val;
                     auto one = prime_field::field_element(1);
                     //merge l and h
-                    if(j == slice_count - 1)
-                    {
-                        alpha.first[j].first = alpha_l.first[j].first * q_eval_0 - (msk_rou[0] - one) * alpha_h.first[j].first;
-                        alpha.first[j].first = (alpha.first[j].first * prime_field::field_element(slice_size / mask_position_gap) - all_sum[j]) * inv_x[0];
-                        alpha.first[j].second = alpha_l.first[j].second * q_eval_1 - (msk_rou[1] - one) * alpha_h.first[j].second;
-                        alpha.first[j].second = (alpha.first[j].second * prime_field::field_element(slice_size / mask_position_gap) - all_sum[j]) * inv_x[1];
-                    }
-                    else
                     {
                         alpha.first[j].first = alpha_l.first[j].first * tst0 - (rou[0] - one) * alpha_h.first[j].first;
                         alpha.first[j].first = (alpha.first[j].first * prime_field::field_element(slice_size >> rs_code_rate) - all_sum[j]) * inv_x[0];
@@ -324,12 +289,6 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
                 }
             }
         }
-        for(int j = 1; j < (1 << rs_code_rate); ++j)
-            if(fri::cpd.rs_codeword_msk[com.mx_depth - 1][j] != fri::cpd.rs_codeword_msk[com.mx_depth - 1][j - 1])
-            {
-                fprintf(stderr, "Fri msk rs code check fail\n");
-                return false;
-            }
     }
     return true;
 }

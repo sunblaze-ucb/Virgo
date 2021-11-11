@@ -7,10 +7,12 @@
 #include <wmmintrin.h>
 #include <cassert>
 #include "flo-shani-aesni/sha256/flo-shani.h"
-#define USESHA3
+//#define USESHA3
+#ifdef USESHA3
 extern "C"{
 #include "lib/libXKCP.a.headers/SimpleFIPS202.h"
 }
+#endif
 
 class __hhash_digest
 {
