@@ -1,7 +1,7 @@
 #define __debug__
 #define __timer__
-#include "linear_gkr/zk_verifier.h"
-#include "linear_gkr/zk_prover.h"
+#include "linear_gkr/verifier.h"
+#include "linear_gkr/prover.h"
 #include "linear_gkr/prime_field.h"
 #include <iostream>
 #include <cassert>

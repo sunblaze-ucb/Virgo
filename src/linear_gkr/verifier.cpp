@@ -867,8 +867,7 @@ prime_field::field_element* public_array_prepare_generic(prime_field::field_elem
 prime_field::field_element* public_array_prepare(prime_field::field_element *r, prime_field::field_element *one_minus_r, int log_length, prime_field::field_element *q_eval_real)
 {
 	q_eval_verifier = new prime_field::field_element[(1 << (log_length - log_slice_number))];
-    q_ratio = new prime_field::field_element[(1 << log_slice_number) + 1];
-    q_ratio[(1 << log_slice_number)] = prime_field::field_element(1);
+    q_ratio = new prime_field::field_element[(1 << log_slice_number)];
     dfs_ratio(0, prime_field::field_element(1), r + log_length - log_slice_number, one_minus_r + log_length - log_slice_number, 0);
     dfs_coef(0, prime_field::field_element(1), r, one_minus_r, 0, log_length - log_slice_number);
     prime_field::field_element *q_coef_verifier = new prime_field::field_element[(1 << (log_length - log_slice_number))];
@@ -942,11 +941,9 @@ bool zk_verifier::verify(const char* output_path)
 		auto r_u = generate_randomness(C.circuit[i - 1].bit_length);
 		auto r_v = generate_randomness(C.circuit[i - 1].bit_length);
 		direct_relay_value = alpha * direct_relay(i, r_0, r_u) + beta * direct_relay(i, r_1, r_u);
-		auto r_c = generate_randomness(1)[0]; //mem leak
 		if(i == 1){
 			for(int j = 0; j < C.circuit[i - 1].bit_length; ++j)
 				r_v[j] = prime_field::field_element(0);
-			r_c = prime_field::field_element(0);
 		}
 		//V should test the maskR for two points, V does random linear combination of these points first
 		auto random_combine = generate_randomness(1)[0];
@@ -1044,17 +1041,14 @@ bool zk_verifier::verify(const char* output_path)
 			r.push_back(r_u[j]);
 		for(int j = 0; j < C.circuit[i - 1].bit_length; ++j)
 			r.push_back(r_v[j]);
-		r.push_back(r_c);
 		
 	
-		if(alpha_beta_sum != r_c * (add_value * (v_u + v_v) + mult_value * v_u * v_v + not_value * (prime_field::field_element(1) - v_u) + minus_value * (v_u - v_v) + xor_value * (v_u + v_v - prime_field::field_element(2) * v_u * v_v) + naab_value * (v_v - v_u * v_v) + sum_value * v_u + relay_value * v_u + exp_sum_value * v_u + bit_test_value * (prime_field::field_element(1) - v_v) * v_u) + direct_relay_value * v_u)
+		if(alpha_beta_sum != (add_value * (v_u + v_v) + mult_value * v_u * v_v + not_value * (prime_field::field_element(1) - v_u) + minus_value * (v_u - v_v) + xor_value * (v_u + v_v - prime_field::field_element(2) * v_u * v_v) + naab_value * (v_v - v_u * v_v) + sum_value * v_u + relay_value * v_u + exp_sum_value * v_u + bit_test_value * (prime_field::field_element(1) - v_v) * v_u) + direct_relay_value * v_u)
 		{
 			fprintf(stderr, "Verification fail, semi final, circuit level %d\n", i);
 			return false;
 		}
-		else
-		{
-		}
+		
 		auto tmp_alpha = generate_randomness(1), tmp_beta = generate_randomness(1);
 		alpha = tmp_alpha[0];
 		beta = tmp_beta[0];
@@ -1076,7 +1070,7 @@ bool zk_verifier::verify(const char* output_path)
 
 	std::cerr << "GKR Prove Time " << p -> total_time << std::endl;
 	prime_field::field_element *all_sum;
-	all_sum = new prime_field::field_element[slice_number + 1];
+	all_sum = new prime_field::field_element[slice_number];
 	auto merkle_root_l = (p -> poly_prover).commit_private_array(p -> circuit_value[0], C.circuit[0].bit_length);
 	
 	q_eval_real = new prime_field::field_element[1 << C.circuit[0].bit_length];

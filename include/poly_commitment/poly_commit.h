@@ -41,7 +41,6 @@ namespace poly_commit
 			std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
 			pre_prepare_executed = true;
 			slice_count = 1 << log_slice_number;
-			slice_count ++; //for masks
 			slice_size = (1 << (log_array_length + rs_code_rate - log_slice_number));
 			slice_real_ele_cnt = slice_size >> rs_code_rate;
 			//prepare polynomial division/decomposition
@@ -133,7 +132,7 @@ namespace poly_commit
 			lq_coef = new prime_field::field_element[2 * slice_real_ele_cnt];
 			h_eval = new prime_field::field_element[std::max(slice_size, slice_real_ele_cnt)];
 			h_eval_arr = new prime_field::field_element[slice_count * slice_size];
-			const int log_leaf_size = log_slice_number;
+			const int log_leaf_size = log_slice_number + 1;
 			for(int i = 0; i < slice_count; ++i)
 			{
 				
@@ -180,12 +179,16 @@ namespace poly_commit
 					auto g = l_eval[i * slice_size + j] * q_eval[i * slice_size + j] - (x_n - 1) * h_eval[j];
 					if(j < slice_size / 2)
 					{
+						assert(((j) << log_leaf_size | (i << 1) | 0) < slice_count * slice_size);
+						assert((((j) << log_leaf_size) & (i << 1)) == 0);
 						fri::virtual_oracle_witness[(j) << log_leaf_size | (i << 1) | 0] = (g + const_sum) * inv_x;
 						fri::virtual_oracle_witness_mapping[j << log_slice_number | i] = j << log_leaf_size | (i << 1) | 0;
 					}
 					else
 					{
 						int jj = j - slice_size / 2;
+						assert(((jj) << log_leaf_size | (i << 1) | 1) < slice_count * slice_size);
+						assert((((jj) << log_leaf_size) & (i << 1)) == 0);
 						fri::virtual_oracle_witness[(jj) << log_leaf_size | (i << 1) | 1] = (g + const_sum) * inv_x;
 						fri::virtual_oracle_witness_mapping[jj << log_slice_number | i] = jj << log_leaf_size | (i << 1) | 0;
 					}

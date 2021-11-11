@@ -53,10 +53,10 @@ namespace fri
 
 	extern __hhash_digest* witness_merkle[2];
 	//prime_field::field_element *witness_rs_codeword[slice_number], *witness_poly_coef[slice_number];
-	extern prime_field::field_element *witness_rs_codeword_before_arrange[2][slice_number + 1];
+	extern prime_field::field_element *witness_rs_codeword_before_arrange[2][slice_number];
 	extern prime_field::field_element *witness_rs_codeword_interleaved[2];
 
-	extern int *witness_rs_mapping[2][slice_number + 1];
+	extern int *witness_rs_mapping[2][slice_number];
 	extern prime_field::field_element *L_group;
 	extern bool* visited[max_bit_length];
 	extern bool* visited_init[2];

@@ -22,7 +22,7 @@ inline bool verify_merkle(__hhash_digest h, std::vector<__hhash_digest> merkle_p
 		my_hhash(data, &cur_hhash);
 	}
 	memset(data, 0, sizeof data);
-    assert(value.size() % 2 == 1);
+    //assert(value.size() % 2 == 1);
 	__hhash_digest value_h;
     memset(&value_h, 0, sizeof(__hhash_digest));
     for(int i = 0; i < value.size(); ++i)
@@ -222,7 +222,7 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
                     
                     if(p_val != beta.first[j].first && p_val != beta.first[j].second)
                     {
-                        fprintf(stderr, "Fri check consistency first round fail\n");
+                        fprintf(stderr, "Fri check consistency first round fail %d\n", j);
                         return false;
                     }
                     if(p_val == beta.first[j].first)
@@ -277,7 +277,7 @@ bool poly_commit::poly_commit_verifier::verify_poly_commitment(prime_field::fiel
         }
         delete[] pre_alpha_1.second.first;
         //CHECK last rs code
-        for(int i = 0; i < slice_count - 1; ++i)
+        for(int i = 0; i < slice_count; ++i)
         {
             auto tmplate = fri::cpd.rs_codeword[com.mx_depth - 1][0 << (log_slice_number + 1) | i << 1 | 0];
             for(int j = 0; j < (1 << (rs_code_rate - 1)); ++j)
