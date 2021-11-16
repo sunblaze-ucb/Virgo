@@ -27,9 +27,15 @@ inline bool verify_merkle(__hhash_digest h, std::vector<__hhash_digest> merkle_p
     memset(&value_h, 0, sizeof(__hhash_digest));
     for(int i = 0; i < value.size(); ++i)
     {
-        prime_field::field_element data_ele[2];
-        data_ele[0] = value[i].first;
-        data_ele[1] = value[i].second;
+        prime_field::u256b data_ele[2];
+        data_ele[0].lo = value[i].first.value.lo & 0xffffffffffffffff;
+        data_ele[0].mid = value[i].first.value.lo >> 64;
+        data_ele[0].hi = value[i].first.value.mid;
+
+        data_ele[1] = value[i].second.value.lo & 0xffffffffffffffff;
+        data_ele[1].mid = value[i].second.value.lo >> 64;
+        data_ele[1].hi = value[i].second.value.mid;
+        
         memcpy(&data[0], data_ele, sizeof(__hhash_digest));
         data[1] = value_h;
         my_hhash(data, &value_h);

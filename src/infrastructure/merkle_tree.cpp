@@ -3,7 +3,7 @@
 int merkle_tree::size_after_padding;
 void merkle_tree::merkle_tree_prover::create_tree(void* src_data, int ele_num, __hhash_digest* &dst, const int element_size = 256 / 8, bool alloc_required = false)
 {
-    assert(element_size == sizeof(prime_field::field_element) * 2);
+    //assert(element_size == sizeof(prime_field::field_element) * 2);
     size_after_padding = 1;
     while(size_after_padding < ele_num)
         size_after_padding *= 2;

@@ -43,3 +43,7 @@ Makefile.win32.Release
 build/
 
 *.txt
+fft_gkr
+gen
+zk_proof
+link.txt

@@ -61,7 +61,7 @@ __hhash_digest fri::request_init_commit(const int bit_len, const int oracle_indi
 		assert(L_group[(1 << log_current_witness_size_per_slice) - 1] * root_of_unity == prime_field::field_element(1));
 	}
 	//commit the witness
-	assert(sizeof(prime_field::field_element) == 16);
+	//assert(sizeof(prime_field::field_element) == 16);
 	witness_rs_codeword_interleaved[oracle_indicator] = new prime_field::field_element[1 << (bit_len + rs_code_rate)];
 	
 	const int log_leaf_size = log_slice_number + 1;
@@ -100,9 +100,17 @@ __hhash_digest fri::request_init_commit(const int bit_len, const int oracle_indi
 		__hhash_digest tmp_hash;
 		memset(&tmp_hash, 0, sizeof(tmp_hash));
 		__hhash_digest data[2];
+		prime_field::u256b tmp_data[2];
 		for(int j = 0; j < (1 << (log_leaf_size)); j += 2)
 		{
-			memcpy(data, &witness_rs_codeword_interleaved[oracle_indicator][i << log_leaf_size | j], 2 * sizeof(prime_field::field_element));
+			tmp_data[0].lo = witness_rs_codeword_interleaved[oracle_indicator][i << log_leaf_size | j | 0].value.lo & 0xffffffffffffffff;
+			tmp_data[0].mid = witness_rs_codeword_interleaved[oracle_indicator][i << log_leaf_size | j | 0].value.lo >> 64;
+			tmp_data[0].hi = witness_rs_codeword_interleaved[oracle_indicator][i << log_leaf_size | j | 0].value.mid;
+			tmp_data[1].lo = witness_rs_codeword_interleaved[oracle_indicator][i << log_leaf_size | j | 1].value.lo & 0xffffffffffffffff;
+			tmp_data[1].mid = witness_rs_codeword_interleaved[oracle_indicator][i << log_leaf_size | j | 1].value.lo >> 64;
+			tmp_data[1].hi = witness_rs_codeword_interleaved[oracle_indicator][i << log_leaf_size | j | 1].value.mid;
+
+			memcpy(data, tmp_data, 2 * sizeof(prime_field::u256b));
 			data[1] = tmp_hash;
 			my_hhash(data, &tmp_hash);
 		}
@@ -368,14 +376,18 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 	for(int i = 0; i < nxt_witness_size / 2; ++i)
 	{
 		__hhash_digest data[2];
-		prime_field::field_element data_ele[2];
+		prime_field::u256b data_ele[2];
 		memset(data, 0, 2 * sizeof(__hhash_digest));
 		memset(&htmp, 0, sizeof(__hhash_digest));
 		for(int j = 0; j < (1 << log_slice_number); ++j)
 		{
 			int c = (i) << log_leaf_size | (j << 1) | 0, d = (i) << log_leaf_size | (j << 1) | 1;
-			data_ele[0] = cpd.rs_codeword[current_step_no][c];
-			data_ele[1] = cpd.rs_codeword[current_step_no][d];
+			data_ele[0].lo = cpd.rs_codeword[current_step_no][c].value.lo & 0xffffffffffffffff;
+			data_ele[0].mid = cpd.rs_codeword[current_step_no][c].value.lo >> 64;
+			data_ele[0].hi = cpd.rs_codeword[current_step_no][c].value.mid;
+			data_ele[1].lo = cpd.rs_codeword[current_step_no][d].value.lo & 0xffffffffffffffff;
+			data_ele[1].mid = cpd.rs_codeword[current_step_no][d].value.lo >> 64;
+			data_ele[1].hi = cpd.rs_codeword[current_step_no][d].value.mid;
 			memcpy(&data[0], data_ele, sizeof(__hhash_digest));
 			data[1] = htmp;
 			my_hhash(data, &htmp);
