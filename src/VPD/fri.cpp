@@ -322,6 +322,7 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 
 	auto t0 = std::chrono::high_resolution_clock::now();
 	int log_leaf_size = log_slice_number + 1;
+	#pragma omp parallel for
 	for(int i = 0; i < nxt_witness_size; ++i)
 	{
 		int qual_res_0 = i;
@@ -333,6 +334,7 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 			pos = qual_res_0;
 		
 		auto inv_mu = L_group[((1 << log_current_witness_size_per_slice) - i) & ((1 << log_current_witness_size_per_slice) - 1)]; 
+		#pragma omp parallel for
 		for(int j = 0; j < slice_number; ++j)
 		{
 			int real_pos = previous_witness_mapping[(pos) << log_slice_number | j];
@@ -349,8 +351,10 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 
 	auto tmp = new prime_field::field_element[nxt_witness_size * poly_commit::slice_count];
 	cpd.rs_codeword_mapping[current_step_no] = new int[nxt_witness_size * poly_commit::slice_count];
+	#pragma omp parallel for
 	for(int i = 0; i < nxt_witness_size / 2; ++i)
 	{
+		#pragma omp parallel for
 		for(int j = 0; j < slice_number; ++j)
 		{
 			int a = i << log_slice_number | j, b = (i + nxt_witness_size / 2) << log_slice_number | j;
@@ -370,12 +374,12 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 
 	visited[current_step_no] = new bool[nxt_witness_size * 4 * poly_commit::slice_count];
 	memset(visited[current_step_no], false, sizeof(bool) * nxt_witness_size * 4 * poly_commit::slice_count);
-	__hhash_digest htmp, *hash_val;
+	__hhash_digest *hash_val;
 	hash_val = new __hhash_digest[nxt_witness_size / 2];
-	memset(&htmp, 0, sizeof(__hhash_digest));
+	#pragma omp parallel for
 	for(int i = 0; i < nxt_witness_size / 2; ++i)
 	{
-		__hhash_digest data[2];
+		__hhash_digest data[2], htmp;
 		prime_field::u256b data_ele[2];
 		memset(data, 0, 2 * sizeof(__hhash_digest));
 		memset(&htmp, 0, sizeof(__hhash_digest));

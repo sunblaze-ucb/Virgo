@@ -37,6 +37,7 @@ public:
 	}
 	~layer()
 	{
+		delete[] gates;
 	}
 };
 
@@ -45,14 +46,16 @@ class layered_circuit
 public:
 	layer *circuit;
 	int total_depth;
+	prime_field::field_element *inputs;
 	layered_circuit()
 	{
 		circuit = NULL;
 		total_depth = 0;
+		inputs = NULL;
 	}
 	~layered_circuit()
 	{
-		
+		delete[] inputs;
 	}
 };
 

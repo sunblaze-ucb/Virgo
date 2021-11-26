@@ -26,11 +26,11 @@ void merkle_tree::merkle_tree_prover::create_tree(void* src_data, int ele_num, _
 
     int start_ptr = size_after_padding;
     int current_lvl_size = size_after_padding;
-    __hhash_digest data[2];
-    memset(data, 0, sizeof data);
+    #pragma omp parallel for
     for(int i = current_lvl_size - 1; i >= 0; --i)
     {
-        
+        __hhash_digest data[2];
+        memset(data, 0, sizeof data);
         if(i < ele_num)
         {
             dst_ptr[i + start_ptr] = ((__hhash_digest*)src_data)[i];
@@ -45,8 +45,10 @@ void merkle_tree::merkle_tree_prover::create_tree(void* src_data, int ele_num, _
     start_ptr -= current_lvl_size;
     while(current_lvl_size >= 1)
     {
+        #pragma omp parallel for
         for(int i = 0; i < current_lvl_size; ++i)
         {
+            __hhash_digest data[2];
             data[0] = dst_ptr[start_ptr + current_lvl_size + i * 2];
             data[1] = dst_ptr[start_ptr + current_lvl_size + i * 2 + 1];
             my_hhash(data, &dst_ptr[start_ptr + i]);

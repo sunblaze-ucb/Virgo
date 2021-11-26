@@ -34,6 +34,7 @@ public:
 	const prime_field::field_element* one_minus_r_0, const prime_field::field_element* one_minus_r_1, 
 	const prime_field::field_element* one_minus_r_u, const prime_field::field_element* one_minus_r_v);
 	void read_circuit(const char *, const char*);
+	void read_r1cs(const char *, const char*, const char*, const char*, const char*);
 	bool verify(const char*);
 	void get_prover(zk_prover*);
 	void delete_self();

@@ -12,6 +12,113 @@ void zk_verifier::get_prover(zk_prover *pp)
 	p = pp;
 }
 
+void zk_verifier::read_r1cs(const char* A_path, const char* B_path, const char* C_path, const char* witness, const char *meta_path)
+{
+	long long nA, nB, nC, n;
+	FILE* A_ptr = fopen(A_path, "rb");
+	FILE* B_ptr = fopen(B_path, "rb");
+	FILE* C_ptr = fopen(C_path, "rb");
+
+	fread(&nA, sizeof(long long), 1, A_ptr);
+	fread(&nB, sizeof(long long), 1, B_ptr);
+	fread(&nC, sizeof(long long), 1, C_ptr);
+
+	assert(nA == nB && nA == nC);
+	n = nA;
+	long long *idx_row_A = new long long[n];
+	long long *idx_row_B = new long long[n];
+	long long *idx_row_C = new long long[n];
+	long long *idx_col_A = new long long[n];
+	long long *idx_col_B = new long long[n];
+	long long *idx_col_C = new long long[n];
+
+	prime_field::field_element *A_val = new prime_field::field_element[n];
+	prime_field::field_element *B_val = new prime_field::field_element[n];
+	prime_field::field_element *C_val = new prime_field::field_element[n];
+	prime_field::field_element *witness_val = new prime_field::field_element[n];
+
+
+	for(int i = 0; i < n; ++i)
+	{
+		fread(&idx_row_A[i], sizeof(long long), 1, A_ptr);
+		fread(&idx_col_A[i], sizeof(long long), 1, A_ptr);
+		fread(&A_val[i].value.lo, sizeof(__uint128_t), 1, A_ptr);
+		fread(&A_val[i].value.mid, sizeof(__uint128_t), 1, A_ptr);
+
+		fread(&idx_row_B[i], sizeof(long long), 1, B_ptr);
+		fread(&idx_col_B[i], sizeof(long long), 1, B_ptr);
+		fread(&B_val[i].value.lo, sizeof(__uint128_t), 1, B_ptr);
+		fread(&B_val[i].value.mid, sizeof(__uint128_t), 1, B_ptr);
+
+		fread(&idx_row_C[i], sizeof(long long), 1, C_ptr);
+		fread(&idx_col_C[i], sizeof(long long), 1, C_ptr);
+		fread(&C_val[i].value.lo, sizeof(__uint128_t), 1, C_ptr);
+		fread(&C_val[i].value.mid, sizeof(__uint128_t), 1, C_ptr);
+	}
+
+
+	FILE *witness_ptr = fopen(witness, "r");
+	long long witness_count = 0;
+	
+	while(!feof(witness_ptr))
+	{
+		char id[1024], num[1024];
+		fscanf(witness_ptr, "%s %s", id, num);
+		prime_field::u256b val = prime_field::u256b(num, strlen(num), 10);
+		witness_val[witness_count].value = val;
+		witness_count++;
+	}
+	long long witness_count_padded = 1;
+	while(witness_count_padded < witness_count)
+	{
+		witness_count_padded *= 2;
+	}
+
+
+	
+	C.circuit = new layer[5]; //input layer + relay layer + (A * z, B * z, C * z) layer + elements wise product layer + output layer
+	C.total_depth = 5;
+
+	{
+		C.circuit[0].bit_length = mylog(witness_count_padded);
+		C.circuit[0].is_parallel = 0;
+		C.circuit[0].block_size = 1;
+		//write relay layer and input layer
+		for(int i = 0; i < witness_count; ++i)
+		{
+			C.inputs[i] = witness[i];
+		}
+		for(int i = witness_count; i < witness_count_padded; ++i)
+		{
+			C.inputs[i] = prime_field::field_element(0);
+		}
+
+		C.circuit[1].bit_length = mylog(witness_count_padded);
+		C.circuit[1].is_parallel = 0;
+		C.circuit[1].block_size = 1;
+		C.circuit[1].gates = new gate[witness_count_padded];
+
+	}
+
+
+	
+	fclose(witness_ptr);
+	fclose(A_ptr);
+	fclose(B_ptr);
+	fclose(C_ptr);
+	delete[] idx_row_A;
+	delete[] idx_row_B;
+	delete[] idx_row_C;
+	delete[] idx_col_A;
+	delete[] idx_col_B;
+	delete[] idx_col_C;
+	delete[] A_val;
+	delete[] B_val;
+	delete[] C_val;
+	delete[] witness_val;
+
+}
+
 void zk_verifier::read_circuit(const char *path, const char *meta_path)
 {
 	int d;
@@ -471,7 +578,6 @@ vector<prime_field::field_element> zk_verifier::predicates(int depth, prime_fiel
 		prime_field::field_element zero_v;
 		zero_v = (beta_v_first_half[0] * beta_v_second_half[0] );
 		bool relay_set = false;
-
 		for(int i = 0; i < (1 << C.circuit[depth].bit_length); ++i)
 		{
 			int g = i, u = C.circuit[depth].gates[i].u, v = C.circuit[depth].gates[i].v;

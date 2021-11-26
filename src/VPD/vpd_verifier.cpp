@@ -76,7 +76,7 @@ poly_commit::ldt_commitment poly_commit::poly_commit_prover::commit_phase(int lo
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0);
 	total_time += time_span.count();
-	printf("Commit time %lf\n", time_span.count());
+	printf("FRI commit time %lf\n", time_span.count());
 
 	return com;
 }

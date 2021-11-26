@@ -1,77 +1,77 @@
 [
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/linear_gkr/main.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/main.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/linear_gkr/main.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/main.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/main.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/infrastructure/utility.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/infrastructure/utility.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/infrastructure/utility.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/infrastructure/utility.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/infrastructure/utility.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/VPD/fri.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/fri.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/VPD/fri.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/fri.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/fri.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/infrastructure/RS_polynomial.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/infrastructure/RS_polynomial.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/infrastructure/RS_polynomial.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/infrastructure/RS_polynomial.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/infrastructure/RS_polynomial.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/infrastructure/merkle_tree.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/infrastructure/merkle_tree.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/infrastructure/merkle_tree.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/infrastructure/merkle_tree.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/infrastructure/merkle_tree.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/VPD/vpd_prover.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/vpd_prover.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/VPD/vpd_prover.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/vpd_prover.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/vpd_prover.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/VPD/vpd_verifier.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/vpd_verifier.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/VPD/vpd_verifier.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/vpd_verifier.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/vpd_verifier.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/linear_gkr/verifier.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/verifier.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/linear_gkr/verifier.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/verifier.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/verifier.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/linear_gkr/prime_field.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/prime_field.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/linear_gkr/prime_field.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/prime_field.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/prime_field.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/linear_gkr/prover.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/prover.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/linear_gkr/prover.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/prover.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/prover.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/linear_gkr/polynomial.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/polynomial.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/linear_gkr/polynomial.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/polynomial.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/polynomial.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/zk_proof.dir/src/poly_commitment/poly_commit.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/poly_commitment/poly_commit.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/zk_proof.dir/src/poly_commitment/poly_commit.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/poly_commitment/poly_commit.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/poly_commitment/poly_commit.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/fft_gkr.dir/src/VPD/fft_circuit_GKR.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/fft_circuit_GKR.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/fft_gkr.dir/src/VPD/fft_circuit_GKR.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/fft_circuit_GKR.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/VPD/fft_circuit_GKR.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/fft_gkr.dir/src/linear_gkr/prime_field.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/prime_field.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/fft_gkr.dir/src/linear_gkr/prime_field.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/prime_field.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/prime_field.cpp"
 },
 {
   "directory": "/home/farmer/ownCloud/ED25519_verify/Virgo/build",
-  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -g   -o CMakeFiles/fft_gkr.dir/src/linear_gkr/polynomial.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/polynomial.cpp",
+  "command": "/bin/x86_64-linux-gnu-g++-9   -I/home/farmer/ownCloud/ED25519_verify/Virgo/include -I/home/farmer/ownCloud/ED25519_verify/Virgo/.   -march=native -lstdc++ -Wall -march=native -faligned-new -O3 -fopenmp -g   -o CMakeFiles/fft_gkr.dir/src/linear_gkr/polynomial.cpp.o -c /home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/polynomial.cpp",
   "file": "/home/farmer/ownCloud/ED25519_verify/Virgo/src/linear_gkr/polynomial.cpp"
 }
 ]

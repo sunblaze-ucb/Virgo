@@ -2,6 +2,7 @@
 #include <cmath>
 #include <climits>
 #include <ctime>
+#include <immintrin.h>
 #include <iostream>
 namespace prime_field
 {
@@ -267,18 +268,24 @@ namespace prime_field
 
 	inline void mul_no_hi(const u256b &a, const u256b &b, u256b &ret)
 	{
-		const __uint128_t lolo = (__uint128_t)a.lo * (__uint128_t)b.lo;
+		unsigned long long lolo_lo, lolo_hi;
+		lolo_lo = _mulx_u64(a.lo, b.lo, &lolo_hi);
+		unsigned long long lomid1_lo, lomid1_hi;
+		lomid1_lo = _mulx_u64(a.mid, b.lo, &lomid1_hi);
+		unsigned long long lomid2_lo, lomid2_hi;
+		lomid2_lo = _mulx_u64(a.lo, b.mid, &lomid2_hi);
+		//const __uint128_t lolo = (__uint128_t)a.lo * (__uint128_t)b.lo;
 		
-		const __uint128_t lomid1 = (__uint128_t)a.mid * (__uint128_t)b.lo;
-		const __uint128_t lomid2 = (__uint128_t)a.lo * (__uint128_t)b.mid;
+		//const __uint128_t lomid1 = (__uint128_t)a.mid * (__uint128_t)b.lo;
+		//const __uint128_t lomid2 = (__uint128_t)a.lo * (__uint128_t)b.mid;
 		
 		//hi * hi omitted
-		ret.lo = (unsigned long long)lolo;
-		const __uint128_t carry = lolo >> 64; //this carry is less than 2**64
-		ret.mid = ((unsigned long long)lomid1 + (unsigned long long)lomid2 + (unsigned long long)carry);
+		ret.lo = (unsigned long long)lolo_lo;
+		const __uint128_t carry = lolo_hi; //this carry is less than 2**64
+		ret.mid = ((unsigned long long)lomid1_lo + (unsigned long long)lomid2_lo + (unsigned long long)carry);
 		//this carry is not necessary less than 2**64
-		const __uint128_t carry2 = ((lomid1 >> 64) + (lomid2 >> 64)) + 
-						   (((lomid1 & __max_ull) + (lomid2 & __max_ull) + carry) >> 64);
+		const __uint128_t carry2 = ((__uint128_t)(lomid1_hi) + (lomid2_hi)) + 
+						   (((__uint128_t)(lomid1_lo) + (lomid2_lo) + carry) >> 64);
 						   
 		ret.hi = (__uint128_t)a.mid * (__uint128_t)b.mid + carry2;
 	}

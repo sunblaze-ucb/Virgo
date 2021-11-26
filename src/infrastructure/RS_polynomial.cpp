@@ -1,16 +1,33 @@
 #include "infrastructure/RS_polynomial.h"
+#include "infrastructure/utility.h"
 #include <thread>
 #include <iostream>
 prime_field::field_element* __dst[3];
 prime_field::field_element* twiddle_factor;
+prime_field::field_element* inv_twiddle_factor;
 const int max_order = 28;
 
-void init_scratch_pad(int order)
+long long twiddle_factor_size;
+
+void init_scratch_pad(long long order)
 {
     __dst[0] = new prime_field::field_element[order];//(prime_field::field_element*)malloc(order * sizeof(prime_field::field_element));
     __dst[1] = new prime_field::field_element[order];//(prime_field::field_element*)malloc(order * sizeof(prime_field::field_element));
     __dst[2] = new prime_field::field_element[order];
     twiddle_factor = new prime_field::field_element[order];
+    twiddle_factor_size = order;
+    inv_twiddle_factor = new prime_field::field_element[order];
+
+    auto rou = prime_field::get_root_of_unity(mylog(order));
+    auto inv_rou = prime_field::inv(rou);
+    twiddle_factor[0] = prime_field::field_element(1);
+    inv_twiddle_factor[0] = prime_field::field_element(1);
+    for(int i = 1; i < order; i++)
+    {
+        twiddle_factor[i] = rou * twiddle_factor[i - 1];
+        inv_twiddle_factor[i] = inv_rou * inv_twiddle_factor[i - 1];
+    }
+
 }
 
 void delete_scratch_pad()
@@ -20,7 +37,7 @@ void delete_scratch_pad()
     delete[] twiddle_factor;
 }
 
-void fast_fourier_transform(const prime_field::field_element *coefficients, int coef_len, int order, prime_field::field_element root_of_unity, prime_field::field_element *result)
+void fast_fourier_transform(const prime_field::field_element *coefficients, int coef_len, int order, prime_field::field_element root_of_unity, prime_field::field_element *result, prime_field::field_element *twiddle_fac)
 {
     prime_field::field_element rot_mul[max_order];
     //note: malloc and free will not call the constructor and destructor, not recommended unless for efficiency
@@ -57,6 +74,7 @@ void fast_fourier_transform(const prime_field::field_element *coefficients, int 
     {
         //initialize leaves
         int blk_sz = (order / coef_len);
+        #pragma omp parallel for
         for(int j = 0; j < blk_sz; ++j)
         {
             for(int i = 0; i < coef_len; ++i)
@@ -65,37 +83,40 @@ void fast_fourier_transform(const prime_field::field_element *coefficients, int 
             }
         }
 
-        prime_field::field_element *x_arr = new prime_field::field_element[1 << lg_order];
 
         {
             //initialize leaves
             {
+                const long long twiddle_size = twiddle_factor_size;
                 for(int dep = lg_coef - 1; dep >= 0; --dep)
                 {
                     int blk_size = 1 << (lg_order - dep);
                     int half_blk_size = blk_size >> 1;
                     int cur = dep & 1;
                     int pre = cur ^ 1;
-
-                    prime_field::field_element x = prime_field::field_element(1);
+                    auto *cur_ptr = __dst[cur];
+                    auto *pre_ptr = __dst[pre];
+                    const long long gap = (twiddle_size / order) * (1 << (dep));
+                    assert(twiddle_size % order == 0);
                     {
+                        #pragma omp parallel for
                         for(int k = 0; k < blk_size / 2; ++k)
                         {
                             int double_k = (k) & (half_blk_size - 1);
+                            auto x = twiddle_fac[k * gap];
                             for(int j = 0; j < (1 << dep); ++j)
                             {
-                                auto l_value = __dst[pre][(double_k << (dep + 1)) | j];
-                                auto r_value = x * __dst[pre][(double_k << (dep + 1) | (1 << dep)) | j];
-                                __dst[cur][(k << dep) | j] = l_value + r_value;
-                                __dst[cur][((k + blk_size / 2) << dep) | j] = l_value - r_value;
+                                auto l_value = pre_ptr[(double_k << (dep + 1)) | j];
+                                auto r_value = x * pre_ptr[(double_k << (dep + 1) | (1 << dep)) | j];
+                                cur_ptr[(k << dep) | j] = l_value + r_value;
+                                cur_ptr[((k + blk_size / 2) << dep) | j] = l_value - r_value;
                             }
-                            x = x * rot_mul[dep];
                         }
                     }
+                    #pragma omp barrier
                 }
             }
         }
-        delete[] x_arr;
     }
 
     for(int i = 0; i < order; ++i)
@@ -122,6 +143,7 @@ void inverse_fast_fourier_transform(prime_field::field_element *evaluations, int
     {
         need_free = true;
         sub_eval = (prime_field::field_element*)malloc(coef_len * sizeof(prime_field::field_element));
+        #pragma omp parallel for
         for(int i = 0; i < coef_len; ++i)
         {
             sub_eval[i] = evaluations[i * (order / coef_len)];
@@ -142,6 +164,7 @@ void inverse_fast_fourier_transform(prime_field::field_element *evaluations, int
         if((1LL << i) == order)
         {
             lg_order = i;
+            break;
         }
     }
     int lg_coef = -1;
@@ -150,10 +173,11 @@ void inverse_fast_fourier_transform(prime_field::field_element *evaluations, int
         if((1LL << i) == coef_len)
         {
             lg_coef = i;
+            break;
         }
     }
     assert(lg_order != -1 && lg_coef != -1);
-
+    
     for(int i = 0; i < lg_order; ++i)
     {
         inv_rou = inv_rou * tmp;
@@ -161,7 +185,7 @@ void inverse_fast_fourier_transform(prime_field::field_element *evaluations, int
     }
     assert(inv_rou * new_rou == prime_field::field_element(1));
 
-    fast_fourier_transform(sub_eval, order, coef_len, inv_rou, dst);
+    fast_fourier_transform(sub_eval, order, coef_len, inv_rou, dst, inv_twiddle_factor);
 
     if(need_free)
         free(sub_eval);
