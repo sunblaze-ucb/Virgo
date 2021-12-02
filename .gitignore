@@ -1,3 +1,8 @@
+build/*
+CMakeFiles/*
+*.cmake
+Makefile
+linear_code
 # Prerequisites
 *.d
 
@@ -30,3 +35,8 @@
 *.exe
 *.out
 *.app
+
+*.txt
+*.pws
+zk_proof
+gen

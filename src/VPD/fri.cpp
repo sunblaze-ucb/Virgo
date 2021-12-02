@@ -6,7 +6,7 @@
 #include <utility>
 #include "infrastructure/utility.h"
 #include <algorithm>
-#include "linear_gkr/zk_prover.h"
+#include "linear_gkr/prover.h"
 #include "poly_commitment/poly_commit.h"
 
 //variables
@@ -17,10 +17,10 @@ double fri::__fri_timer;
 __hhash_digest* fri::witness_merkle[2];
 int witness_merkle_size[2];
 //prime_field::field_element *witness_rs_codeword[slice_number], *witness_poly_coef[slice_number];
-prime_field::field_element *fri::witness_rs_codeword_before_arrange[2][slice_number + 1];
+prime_field::field_element *fri::witness_rs_codeword_before_arrange[2][slice_number];
 prime_field::field_element *fri::witness_rs_codeword_interleaved[2];
 
-int *fri::witness_rs_mapping[2][slice_number + 1];
+int *fri::witness_rs_mapping[2][slice_number];
 prime_field::field_element *fri::L_group;
 bool* fri::visited[max_bit_length];
 bool* fri::visited_init[2];
@@ -30,12 +30,12 @@ __hhash_digest* fri::leaf_hash[2];
 prime_field::field_element *fri::r_extended;
 //extern int slice_size, slice_count, slice_real_ele_cnt, mask_position_gap;
 //extern prime_field::field_element *l_eval, *l_coef, *h_coef, *h_eval_arr;
-prime_field::field_element *fri::virtual_oracle_witness, *fri::virtual_oracle_witness_msk;
-int *fri::virtual_oracle_witness_mapping, *fri::virtual_oracle_witness_msk_mapping;
+prime_field::field_element *fri::virtual_oracle_witness;
+int *fri::virtual_oracle_witness_mapping;
 
 __hhash_digest fri::request_init_commit(const int bit_len, const int oracle_indicator)
 {
-	assert(poly_commit::slice_size * poly_commit::slice_count == (1 << (bit_len + rs_code_rate - log_slice_number)) * (1 + (1 << log_slice_number)));
+	assert(poly_commit::slice_size * poly_commit::slice_count == (1 << (bit_len + rs_code_rate - log_slice_number)) * (1 << log_slice_number));
 	//TO CHECK BUG
 	__fri_timer = 0;
 	//Take care of mem leak
@@ -61,7 +61,7 @@ __hhash_digest fri::request_init_commit(const int bit_len, const int oracle_indi
 		assert(L_group[(1 << log_current_witness_size_per_slice) - 1] * root_of_unity == prime_field::field_element(1));
 	}
 	//commit the witness
-	assert(sizeof(prime_field::field_element) == 16);
+	//assert(sizeof(prime_field::field_element) == 16);
 	witness_rs_codeword_interleaved[oracle_indicator] = new prime_field::field_element[1 << (bit_len + rs_code_rate)];
 	
 	const int log_leaf_size = log_slice_number + 1;
@@ -106,22 +106,6 @@ __hhash_digest fri::request_init_commit(const int bit_len, const int oracle_indi
 			data[1] = tmp_hash;
 			my_hhash(data, &tmp_hash);
 		}
-		memset(data, 0, sizeof(__hhash_digest) * 2);
-		prime_field::field_element ele[2];
-		if(oracle_indicator == 0)
-		{
-			ele[0] = poly_commit::l_eval[(poly_commit::slice_count - 1) * poly_commit::slice_size + (i)];
-			ele[1] = poly_commit::l_eval[(poly_commit::slice_count - 1) * poly_commit::slice_size + (i + (1 << log_current_witness_size_per_slice) / 2)];
-		}
-		else
-		{
-			ele[0] = poly_commit::h_eval_arr[(poly_commit::slice_count - 1) * poly_commit::slice_size + (i)];
-			ele[1] = poly_commit::h_eval_arr[(poly_commit::slice_count - 1) * poly_commit::slice_size + (i + (1 << log_current_witness_size_per_slice) / 2)];
-		}
-		assert((poly_commit::slice_count - 1) * poly_commit::slice_size + (i + (1 << log_current_witness_size_per_slice) / 2) < poly_commit::slice_count * poly_commit::slice_size);
-		memcpy(data, ele, sizeof(prime_field::field_element) * 2);
-		data[1] = tmp_hash;
-		my_hhash(data, &tmp_hash);
 		leaf_hash[oracle_indicator][i] = tmp_hash;
 	}
 	merkle_tree::merkle_tree_prover::create_tree(leaf_hash[oracle_indicator], 1 << (log_current_witness_size_per_slice - 1), witness_merkle[oracle_indicator], sizeof(__hhash_digest), true);
@@ -163,10 +147,12 @@ std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_e
 		if(!visited_witness[oracle_indicator][pow_0 << log_leaf_size | i << 1 | 1])
 			visited_witness[oracle_indicator][pow_0 << log_leaf_size | i << 1 | 1] = true, new_size += sizeof(prime_field::field_element);
 	}
+	/*
 	if(oracle_indicator == 0)
-		value.push_back(std::make_pair(poly_commit::l_eval[(poly_commit::slice_count - 1) * poly_commit::slice_size + pow_0], poly_commit::l_eval[(poly_commit::slice_count - 1) * poly_commit::slice_size + pow_1]));
+		value.push_back(std::make_pair(poly_commit::l_eval[(poly_commit::slice_count) * poly_commit::slice_size + pow_0], poly_commit::l_eval[(poly_commit::slice_count) * poly_commit::slice_size + pow_1]));
 	else
-		value.push_back(std::make_pair(poly_commit::h_eval_arr[(poly_commit::slice_count - 1) * poly_commit::slice_size + pow_0], poly_commit::h_eval_arr[(poly_commit::slice_count - 1) * poly_commit::slice_size + pow_1]));
+		value.push_back(std::make_pair(poly_commit::h_eval_arr[(poly_commit::slice_count) * poly_commit::slice_size + pow_0], poly_commit::h_eval_arr[(poly_commit::slice_count) * poly_commit::slice_size + pow_1]));
+	*/
 	std::vector<__hhash_digest> com_hhash;
 	int depth = log_current_witness_size_per_slice - 1;
 	com_hhash.resize(depth + 1);
@@ -255,7 +241,7 @@ std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_e
 		pow_0 /= 2;
 		if(!visited[lvl][pow_0 * 2])
 		{
-			//visited[lvl][pow_0 * 2] = true;
+			visited[lvl][pow_0 * 2] = true;
 			//new_size += sizeof(prime_field::field_element);
 		}
 		else
@@ -265,8 +251,6 @@ std::pair<std::vector<std::pair<prime_field::field_element, prime_field::field_e
 	//this can be compressed into one by random linear combination
 	if(!visited_element)
 	    new_size += sizeof(prime_field::field_element);
-	pow_0 = cpd.rs_codeword_msk_mapping[lvl][pow];
-	value_vec.push_back(std::make_pair(cpd.rs_codeword_msk[lvl][pow_0], cpd.rs_codeword_msk[lvl][pow_0 + 1]));
 	std::vector<__hhash_digest> com_hhash;
 	
 	pow_0 = (cpd.rs_codeword_mapping[lvl][pow << log_slice_number] >> (log_slice_number + 1)) + cpd.merkle_size[lvl];
@@ -293,24 +277,18 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 	int nxt_witness_size = (1 << log_current_witness_size_per_slice) / 2;
 	if(cpd.rs_codeword[current_step_no] == NULL)
 		cpd.rs_codeword[current_step_no] = new prime_field::field_element[nxt_witness_size * poly_commit::slice_count];
-	if(cpd.rs_codeword_msk[current_step_no] == NULL)
-		cpd.rs_codeword_msk[current_step_no] = new prime_field::field_element[nxt_witness_size];
-	prime_field::field_element *previous_witness, *previous_witness_msk;
-	int *previous_witness_mapping, *previous_witness_msk_mapping;
+	prime_field::field_element *previous_witness;
+	int *previous_witness_mapping;
 	if(current_step_no == 0)
 	{
 		//virtual oracle
 		previous_witness = virtual_oracle_witness;
-		previous_witness_msk = virtual_oracle_witness_msk;
 		previous_witness_mapping = virtual_oracle_witness_mapping;
-		previous_witness_msk_mapping = virtual_oracle_witness_msk_mapping;
 	}
 	else
 	{
 		previous_witness = cpd.rs_codeword[current_step_no - 1];
-		previous_witness_msk = cpd.rs_codeword_msk[current_step_no - 1];
 		previous_witness_mapping = cpd.rs_codeword_mapping[current_step_no - 1];
-		previous_witness_msk_mapping = cpd.rs_codeword_msk_mapping[current_step_no - 1];
 	}
 	
 	auto inv_2 = prime_field::inv(prime_field::field_element(2));
@@ -318,6 +296,7 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 
 	auto t0 = std::chrono::high_resolution_clock::now();
 	int log_leaf_size = log_slice_number + 1;
+	#pragma omp parallel for
 	for(int i = 0; i < nxt_witness_size; ++i)
 	{
 		int qual_res_0 = i;
@@ -329,13 +308,14 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 			pos = qual_res_0;
 		
 		auto inv_mu = L_group[((1 << log_current_witness_size_per_slice) - i) & ((1 << log_current_witness_size_per_slice) - 1)]; 
+		#pragma omp parallel for
 		for(int j = 0; j < slice_number; ++j)
 		{
 			int real_pos = previous_witness_mapping[(pos) << log_slice_number | j];
 			//BUG BUG BUG, to check
 			assert((i << log_slice_number | j) < nxt_witness_size * poly_commit::slice_count);
 			cpd.rs_codeword[current_step_no][i << log_slice_number | j] = inv_2 * ((previous_witness[real_pos] + previous_witness[real_pos | 1]) 
-																	+ inv_mu * r * (previous_witness[real_pos] - previous_witness[real_pos | 1]));
+																	+ inv_mu * r  * (previous_witness[real_pos] - previous_witness[real_pos | 1]));
 		}
 	}
 	for(int i = 0; i < nxt_witness_size; ++i)
@@ -345,8 +325,10 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 
 	auto tmp = new prime_field::field_element[nxt_witness_size * poly_commit::slice_count];
 	cpd.rs_codeword_mapping[current_step_no] = new int[nxt_witness_size * poly_commit::slice_count];
+	#pragma omp parallel for
 	for(int i = 0; i < nxt_witness_size / 2; ++i)
 	{
+		#pragma omp parallel for
 		for(int j = 0; j < slice_number; ++j)
 		{
 			int a = i << log_slice_number | j, b = (i + nxt_witness_size / 2) << log_slice_number | j;
@@ -363,31 +345,6 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 	}
 	delete[] cpd.rs_codeword[current_step_no];
 	cpd.rs_codeword[current_step_no] = tmp;
-
-	for(int i = 0; i < nxt_witness_size; ++i)
-	{
-		int qual_res_0 = i;
-		int qual_res_1 = ((1 << (log_current_witness_size_per_slice - 1)) + i) / 2;
-		int pos;
-		if(qual_res_0 > qual_res_1)
-			pos = qual_res_1;
-		else
-			pos = qual_res_0;
-		auto inv_mu = L_group[((1 << log_current_witness_size_per_slice) - i) & ((1 << log_current_witness_size_per_slice) - 1)]; 
-		int real_pos = previous_witness_msk_mapping[(pos)];
-		cpd.rs_codeword_msk[current_step_no][i] = inv_2 * ((previous_witness_msk[real_pos] + previous_witness_msk[real_pos + 1]) + inv_mu * r * (previous_witness_msk[real_pos] - previous_witness_msk[real_pos + 1]));
-	}
-	tmp = new prime_field::field_element[nxt_witness_size];
-	cpd.rs_codeword_msk_mapping[current_step_no] = new int[nxt_witness_size];
-	for(int i = 0; i < nxt_witness_size / 2; ++i)
-	{
-		tmp[i << 1 | 0] = cpd.rs_codeword_msk[current_step_no][i];
-		tmp[i << 1 | 1] = cpd.rs_codeword_msk[current_step_no][i + nxt_witness_size / 2];
-		cpd.rs_codeword_msk_mapping[current_step_no][i] = i << 1 | 0;
-		cpd.rs_codeword_msk_mapping[current_step_no][i + nxt_witness_size / 2] = i << 1 | 0; //this is correct
-	}
-	delete[] cpd.rs_codeword_msk[current_step_no];
-	cpd.rs_codeword_msk[current_step_no] = tmp;
 
 	visited[current_step_no] = new bool[nxt_witness_size * 4 * poly_commit::slice_count];
 	memset(visited[current_step_no], false, sizeof(bool) * nxt_witness_size * 4 * poly_commit::slice_count);
@@ -409,13 +366,6 @@ __hhash_digest fri::commit_phase_step(prime_field::field_element r)
 			data[1] = htmp;
 			my_hhash(data, &htmp);
 		}
-		int pos = cpd.rs_codeword_msk_mapping[current_step_no][i];
-		data_ele[0] = cpd.rs_codeword_msk[current_step_no][pos];
-		data_ele[1] = cpd.rs_codeword_msk[current_step_no][pos | 1];
-		
-		memcpy(&data[0], data_ele, sizeof(__hhash_digest));
-		data[1] = htmp;
-		my_hhash(data, &htmp);
 		hash_val[i] = htmp;
 	}
 	merkle_tree::merkle_tree_prover::create_tree(hash_val, nxt_witness_size / 2, cpd.merkle[current_step_no], sizeof(__hhash_digest), cpd.merkle[current_step_no] == NULL);
