@@ -8,7 +8,7 @@ import tempfile
 def debug(dstr):
     global VERBOSE
     if VERBOSE:
-        print dstr
+        print(dstr)
 
 #out[i]=(x[i]&y[i])^(~x[i]&z[i])
 def writeCHfunction(fh, x, y, z, voffset):
@@ -458,7 +458,7 @@ def write_4_rounds(fh, finfh, randzero, noconsts):
     #####################################################
     # write constants first
     if noconsts:
-        for ionum in xrange(v_initial):
+        for ionum in range(v_initial):
             finfh.write("P V%d = I%d E\n" % (ionum, ionum))
     else:
         finfh.write("P V0 = 0 E\n")
@@ -722,7 +722,7 @@ def write_64_rounds(fh, finfh, randzero, noconsts):
     #####################################################
     # write constants first
     if noconsts:
-        for ionum in xrange(v_initial):
+        for ionum in range(v_initial):
             finfh.write("P V%d = I%d E\n" % (ionum, ionum))
     else:
         finfh.write("P V0 = 0 E\n")
@@ -1208,12 +1208,12 @@ if __name__ == "__main__" :
     try:
         (opts, args) = getopt.getopt(sys.argv[1:], oStr)
     except getopt.GetoptError as err:
-        print uStr
-        print str(err)
+        print(uStr)
+        print(str(err))
         sys.exit(1)
     if len(args) > 0:
-        print uStr
-        print "ERROR: extraneous arguments."
+        print(uStr)
+        print("ERROR: extraneous arguments.")
         sys.exit(1)
 
     for (opt, arg) in opts:
@@ -1234,8 +1234,8 @@ if __name__ == "__main__" :
             assert False, "logic error: got unexpected option %s from getopt" % opt
 
     if merkle is not None and nrounds != 64:
-        print uStr
-        print "ERROR: Merkle can only be used with 64-round ckt"
+        print(uStr)
+        print("ERROR: Merkle can only be used with 64-round ckt")
         sys.exit(1)
 
     (fd, tempname) = tempfile.mkstemp()

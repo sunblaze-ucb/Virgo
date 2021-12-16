@@ -1,17 +1,20 @@
-#ifndef __zk_prover
-#define __zk_prover
-
+#ifndef __d_prover
+#define __d_prover
+#define MPI_ENABLED
 #include "linear_gkr/circuit_fast_track.h"
 #include "linear_gkr/prime_field.h"
 #include "linear_gkr/polynomial.h"
 #include <cstring>
 #include <utility>
+#include <mpi.h>
 #include <vector>
 #include <chrono>
 #include "VPD/vpd_prover.h"
 #include "infrastructure/my_hhash.h"
 #include "VPD/fri.h"
 #include "poly_commitment/poly_commit.h"
+
+extern MPI_Datatype mpiint128_t, mpiu256_t, mpiu512_t, mpifield_element_t;
 
 class zk_prover
 {
@@ -41,6 +44,14 @@ public:
 	prime_field::field_element *beta_u, *beta_v, *beta_g;
 	linear_poly *add_mult_sum;
 	///@}
+	int lg_world_size;
+	int rank;
+
+	void set_rank(int my_rank, int size)
+	{
+		lg_world_size = mylog(size);
+		rank = my_rank;
+	}
 
 
 	double total_time;
@@ -66,6 +77,7 @@ public:
 	void sumcheck_phase2_init(prime_field::field_element, const prime_field::field_element*, const prime_field::field_element*);
 	quadratic_poly sumcheck_phase1_update(prime_field::field_element, int);
 	quadratic_poly sumcheck_phase2_update(prime_field::field_element, int);
+	quadratic_poly sumcheck_phase_update_generic(prime_field::field_element previous_random, int current_bit);
 
 	///@}
 	/**I do not know what it is*/

@@ -1,4 +1,4 @@
-#include "linear_gkr/prover.h"
+#include "linear_gkr/d_prover.h"
 #include <iostream>
 #include <utility>
 #include <vector>
@@ -269,11 +269,37 @@ void zk_prover::sumcheck_phase1_init()
 			beta_g_r1_shalf[j] = beta_g_r1_shalf[j] * one_minus_r_1[i + first_half];
 		}
 	}
+	
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	int mask_fhalf = (1 << first_half) - 1;
 
 	prime_field::field_element *intermediates0 = new prime_field::field_element[1 << length_g];
 	prime_field::field_element *intermediates1 = new prime_field::field_element[1 << length_g];
+
+	//update beta_g according to rank
+	prime_field::field_element g_multiplier[2];
+	g_multiplier[0] = prime_field::field_element(1);
+	g_multiplier[1] = prime_field::field_element(1);
+	for(int i = 0; i < lg_world_size; ++i)
+	{
+		if(((rank >> i) & 1))
+		{
+			g_multiplier[0] = g_multiplier[0] * r_0[i + length_g];
+			g_multiplier[1] = g_multiplier[1] * r_1[i + length_g];
+		}
+		else
+		{
+			g_multiplier[0] = g_multiplier[0] * one_minus_r_0[i + length_g];
+			g_multiplier[1] = g_multiplier[1] * one_minus_r_1[i + length_g];
+		}
+	}
+	for(int i = 0; i < (1 << first_half); ++i)
+	{
+		beta_g_r0_fhalf[i] = beta_g_r0_fhalf[i] * g_multiplier[0];
+		beta_g_r1_fhalf[i] = beta_g_r1_fhalf[i] * g_multiplier[1];
+	}
 
 	#pragma omp parallel for
 	for(int i = 0; i < (1 << length_g); ++i)
@@ -530,6 +556,50 @@ void zk_prover::sumcheck_phase1_init()
 	total_time += time_span.count();
 }
 
+quadratic_poly zk_prover::sumcheck_phase_update_generic(prime_field::field_element previous_random, int current_bit)
+{
+	std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
+	quadratic_poly ret = quadratic_poly(prime_field::field_element(0), prime_field::field_element(0), prime_field::field_element(0));
+
+	for(int i = 0; i < (total_uv >> 1); ++i)
+	{
+		int g_zero = i << 1, g_one = i << 1 | 1;
+		if(current_bit == 0)
+		{
+			V_mult_add[i].b = V_mult_add[g_zero].b;
+			V_mult_add[i].a = V_mult_add[g_one].b - V_mult_add[i].b;
+
+			addV_array[i].b = addV_array[g_zero].b;
+			addV_array[i].a = addV_array[g_one].b - addV_array[i].b;
+
+			add_mult_sum[i].b = add_mult_sum[g_zero].b;
+			add_mult_sum[i].a = add_mult_sum[g_one].b - add_mult_sum[i].b;
+		}
+		else
+		{
+			
+			V_mult_add[i].b = (V_mult_add[g_zero].a * previous_random + V_mult_add[g_zero].b);
+			V_mult_add[i].a = (V_mult_add[g_one].a * previous_random + V_mult_add[g_one].b - V_mult_add[i].b);
+
+			addV_array[i].b = (addV_array[g_zero].a * previous_random + addV_array[g_zero].b);
+			addV_array[i].a = (addV_array[g_one].a * previous_random + addV_array[g_one].b - addV_array[i].b);
+
+			add_mult_sum[i].b = (add_mult_sum[g_zero].a * previous_random + add_mult_sum[g_zero].b);
+			add_mult_sum[i].a = (add_mult_sum[g_one].a * previous_random + add_mult_sum[g_one].b - add_mult_sum[i].b);
+		}
+
+		ret.a = (ret.a + add_mult_sum[i].a * V_mult_add[i].a);
+		ret.b = (ret.b + add_mult_sum[i].a * V_mult_add[i].b + add_mult_sum[i].b * V_mult_add[i].a + addV_array[i].a);
+		ret.c = (ret.c + add_mult_sum[i].b * V_mult_add[i].b + addV_array[i].b);
+	}
+	
+	total_uv >>= 1;
+	std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
+	std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0);
+	total_time += time_span.count();
+	return ret;
+}
 
 //new zk function
 quadratic_poly zk_prover::sumcheck_phase1_update(prime_field::field_element previous_random, int current_bit)
@@ -606,14 +676,17 @@ quadratic_poly zk_prover::sumcheck_phase1_update(prime_field::field_element prev
 
 void zk_prover::sumcheck_phase2_init(prime_field::field_element previous_random, const prime_field::field_element* r_u, const prime_field::field_element* one_minus_r_u)
 {
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
-	
+	printf("sumcheck_phase2_init, rank %d\n", rank);
 	v_u = V_mult_add[0].eval(previous_random);
 
 	int first_half = length_u >> 1, second_half = length_u - first_half;
 
 	beta_u_fhalf[0] = prime_field::field_element(1);
 	beta_u_shalf[0] = prime_field::field_element(1);
+	printf("rank %d, milestone -1\n", rank);
 	for(int i = 0; i < first_half; ++i)
 	{
 		for(int j = 0; j < (1 << i); ++j)
@@ -632,6 +705,24 @@ void zk_prover::sumcheck_phase2_init(prime_field::field_element previous_random,
 		}
 	}
 
+	prime_field::field_element g_multiplier;
+	g_multiplier = prime_field::field_element(1);
+	for(int i = 0; i < lg_world_size; ++i)
+	{
+		if(((rank >> i) & 1))
+		{
+			g_multiplier = g_multiplier * r_u[i + length_u];
+		}
+		else
+		{
+			g_multiplier = g_multiplier * one_minus_r_u[i + length_u];
+		}
+	}
+	for(int i = 0; i < (1 << first_half); ++i)
+	{
+		beta_u_fhalf[i] = beta_u_fhalf[i] * g_multiplier;
+	}
+
 	int mask_fhalf = (1 << first_half) - 1;
 	int first_g_half = (length_g >> 1);
 	int mask_g_fhalf = (1 << (length_g >> 1)) - 1;
@@ -639,6 +730,9 @@ void zk_prover::sumcheck_phase2_init(prime_field::field_element previous_random,
 	total_uv = (1 << C -> circuit[sumcheck_layer_id - 1].bit_length);
 	int total_g = (1 << C -> circuit[sumcheck_layer_id].bit_length);
 	prime_field::field_element zero = prime_field::field_element(0);
+	printf("rank %d, milestone 0\n", rank);
+	printf("rank %d, %lld %lld %lld\n", rank, add_mult_sum, addV_array, V_mult_add);
+	printf("rank %d, %d\n", rank, total_uv);
 	for(int i = 0; i < total_uv; ++i)
 	{
 		add_mult_sum[i].a = zero;
@@ -647,10 +741,11 @@ void zk_prover::sumcheck_phase2_init(prime_field::field_element previous_random,
 		addV_array[i].b = zero;
 		V_mult_add[i] = circuit_value[sumcheck_layer_id - 1][i];
 	}
-
+	printf("rank %d, total g %d\n", rank, total_g);
 	prime_field::field_element *intermediates0 = new prime_field::field_element[total_g];
 	prime_field::field_element *intermediates1 = new prime_field::field_element[total_g];
 	prime_field::field_element *intermediates2 = new prime_field::field_element[total_g];
+	printf("rank %d, milestone 1\n", rank);
 
 	#pragma omp parallel for
 	for(int i = 0; i < total_g; ++i)
@@ -767,7 +862,7 @@ void zk_prover::sumcheck_phase2_init(prime_field::field_element previous_random,
 			}
 		}
 	}
-	
+	printf("rank %d, milestone 2\n", rank);
 	
 	for(int i = 0; i < total_g; ++i)
 	{

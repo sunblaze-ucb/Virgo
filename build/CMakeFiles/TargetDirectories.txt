@@ -1,4 +1,0 @@
-/home/farmer/ownCloud/ED25519_verify/Virgo/build/CMakeFiles/rebuild_cache.dir
-/home/farmer/ownCloud/ED25519_verify/Virgo/build/CMakeFiles/edit_cache.dir
-/home/farmer/ownCloud/ED25519_verify/Virgo/build/CMakeFiles/zk_proof.dir
-/home/farmer/ownCloud/ED25519_verify/Virgo/build/CMakeFiles/fft_gkr.dir

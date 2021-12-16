@@ -9,8 +9,9 @@ using namespace std;
 int main(int argc, char **argv)
 {
 
-	int mat_sz;
+	int mat_sz, num_copies;
 	sscanf(argv[1], "%d", &mat_sz);
+	sscanf(argv[5], "%d", &num_copies);
 	FILE *output_path = fopen(argv[2], "w");
 	FILE *meta_path = fopen(argv[3], "w");
 
@@ -84,5 +85,16 @@ int main(int argc, char **argv)
 	fprintf(meta_path, "0 0 1 0 0\n");
 	fclose(output_path);
 	fclose(meta_path);
+	for(int i = 0; i < num_copies; ++i)
+	{
+		char wit_path[256];
+		sprintf(wit_path, "%s_%d", argv[4], i);
+		FILE *witness_file = fopen(wit_path, "w");
+		for(int i = 0; i < 2 * mat_sz * mat_sz; ++i)
+		{
+			fprintf(witness_file, "%d ", rand());
+		}
+		fclose(witness_file);
+	}
 	return 0;
 }
