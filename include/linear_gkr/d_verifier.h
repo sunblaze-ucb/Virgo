@@ -43,7 +43,7 @@ public:
 	void read_circuit(const char *, const char*);
 	void read_witness(const char* path_prefix, int rank);
 	void read_r1cs(const char *, const char*, const char*, const char*, const char*);
-	prime_field::field_element leader_gather_and_continue_sumcheck(linear_poly V_mult_add, linear_poly addV_array, linear_poly add_mult_sum, prime_field::field_element alpha_beta_sum, prime_field::field_element &previous_random, prime_field::field_element* r, int lg_n, int rank, int lg_world, int &proof_size);
+	prime_field::field_element leader_gather_and_continue_sumcheck(linear_poly V_mult_add, linear_poly addV_array, linear_poly add_mult_sum, prime_field::field_element alpha_beta_sum, prime_field::field_element &previous_random, prime_field::field_element* r, int lg_n, int rank, int lg_world, int &proof_size, prime_field::field_element offset);
 	bool verify(const char*);
 	void get_prover(zk_prover*);
 	void delete_self();

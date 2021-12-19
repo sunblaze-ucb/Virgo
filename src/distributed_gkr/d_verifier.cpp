@@ -589,6 +589,12 @@ vector<prime_field::field_element> zk_verifier::predicates(int depth, prime_fiel
 	std::vector<prime_field::field_element> one_block_alpha, one_block_beta;
 	one_block_alpha.resize(gate_type_count);
 	one_block_beta.resize(gate_type_count);
+	
+	for(int i = 0; i < gate_type_count; ++i)
+	{
+		one_block_alpha[i] = prime_field::field_element(0);
+		one_block_beta[i] = prime_field::field_element(0);
+	}
 	{
 		int first_half_g = C.circuit[depth].bit_length / 2;
 		int first_half_uv = C.circuit[depth - 1].bit_length / 2;
@@ -597,6 +603,8 @@ vector<prime_field::field_element> zk_verifier::predicates(int depth, prime_fiel
 		prime_field::field_element zero_v;
 		zero_v = (beta_v_first_half[0] * beta_v_second_half[0]);
 		bool relay_set = false;
+		printf("depth %d\n", depth);
+		printf("type %d\n", C.circuit[depth].gates[0].ty);
 		for(int i = 0; i < (1 << C.circuit[depth].bit_length); ++i)
 		{
 			int g = i, u = C.circuit[depth].gates[i].u, v = C.circuit[depth].gates[i].v;
@@ -607,18 +615,19 @@ vector<prime_field::field_element> zk_verifier::predicates(int depth, prime_fiel
 			int u_second_half = u >> first_half_uv;
 			int v_first_half = v & ((1 << first_half_uv) - 1);
 			int v_second_half = v >> first_half_uv;
+			assert(C.circuit[depth].gates[i].ty == 0 || C.circuit[depth].gates[i].ty == 1 || C.circuit[depth].gates[i].ty == 5);
 			switch(C.circuit[depth].gates[i].ty)
 			{
 				case 0:
 				{
-					ret[0] = ret[0] + (beta_g_r0_first_half[g_first_half] * beta_g_r0_second_half[g_second_half] + beta_g_r1_first_half[g_first_half] * beta_g_r1_second_half[g_second_half])  * 
-								(beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half])  * (beta_v_first_half[v_first_half] * beta_v_second_half[v_second_half] );
+					one_block_alpha[0] = one_block_alpha[0] + beta_g_r0_first_half[g_first_half] * beta_g_r0_second_half[g_second_half] * (beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half])  * (beta_v_first_half[v_first_half] * beta_v_second_half[v_second_half]);
+					one_block_beta[0] = one_block_beta[0] + beta_g_r1_first_half[g_first_half] * beta_g_r1_second_half[g_second_half] * (beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half])  * (beta_v_first_half[v_first_half] * beta_v_second_half[v_second_half]);
 					break;
 				}
 				case 1:
 				{
-					ret[1] = ret[1] + (beta_g_r0_first_half[g_first_half] * beta_g_r0_second_half[g_second_half] + beta_g_r1_first_half[g_first_half] * beta_g_r1_second_half[g_second_half])  * 
-								(beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half])  * (beta_v_first_half[v_first_half] * beta_v_second_half[v_second_half] );
+					one_block_alpha[1] = one_block_alpha[1] + beta_g_r0_first_half[g_first_half] * beta_g_r0_second_half[g_second_half] * beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half] * beta_v_first_half[v_first_half] * beta_v_second_half[v_second_half];
+					one_block_beta[1] = one_block_beta[1] + beta_g_r1_first_half[g_first_half] * beta_g_r1_second_half[g_second_half] * beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half] * beta_v_first_half[v_first_half] * beta_v_second_half[v_second_half];
 					break;
 				}
 				case 2:
@@ -635,13 +644,18 @@ vector<prime_field::field_element> zk_verifier::predicates(int depth, prime_fiel
 				}
 				case 5:
 				{
-					auto beta_g_val = beta_g_r0_first_half[g_first_half] * beta_g_r0_second_half[g_second_half] + beta_g_r1_first_half[g_first_half] * beta_g_r1_second_half[g_second_half];
+					int g_first_half = g & ((1 << first_half_g) - 1);
+					int g_second_half = (g >> first_half_g);
+					
+					auto beta_g_val_alpha = beta_g_r0_first_half[g_first_half] * beta_g_r0_second_half[g_second_half];
+					auto beta_g_val_beta = beta_g_r1_first_half[g_first_half] * beta_g_r1_second_half[g_second_half];
 					auto beta_v_0 = beta_v_first_half[0] * beta_v_second_half[0];
 					for(int j = u; j < v; ++j)
 					{
 						int u_first_half = j & ((1 << first_half_uv) - 1);
 						int u_second_half = j >> first_half_uv;
-						ret[5] = ret[5] + beta_g_val * beta_v_0 * (beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half]);
+						one_block_alpha[5] = one_block_alpha[5] + beta_g_val_alpha * beta_v_0 * (beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half]);
+						one_block_beta[5] = one_block_beta[5] + beta_g_val_beta * beta_v_0 * (beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half]);
 					}
 					break;
 				}
@@ -764,7 +778,7 @@ vector<prime_field::field_element> zk_verifier::predicates(int depth, prime_fiel
 		}
 		for(int j = 0; j < gate_type_count; ++j)
 		{
-			if(j == 6 || j == 10 || j == 5 || j == 12)
+			if(j == 6 || j == 10 || j == 12)
 			{
 				ret[j] = ret[j] + prefix_alpha_v0 * one_block_alpha[j] + prefix_beta_v0 * one_block_beta[j];
 			}
@@ -782,6 +796,13 @@ vector<prime_field::field_element> zk_verifier::predicates(int depth, prime_fiel
 			assert(ret[i] == ret_para[i]);
 	}
 	*/
+/*
+	for(int i = 0; i < gate_type_count; ++i)
+	{
+		if(i != 5)
+			assert(ret[i] == 0);
+	}
+*/
 	return ret;
 }
 
@@ -1056,9 +1077,6 @@ quadratic_poly summarize_poly(quadratic_poly poly, int lg_world_size, int rank)
 	{
 		for(int i = 0; i < (1 << lg_world_size); ++i)
 		{
-			printf("a[%d] = %s\n", i, a[i].to_string());
-			printf("b[%d] = %s\n", i, b[i].to_string());
-			printf("c[%d] = %s\n", i, c[i].to_string());
 			result.a = result.a + a[i];
 			result.b = result.b + b[i];
 			result.c = result.c + c[i];
@@ -1075,7 +1093,7 @@ quadratic_poly summarize_poly(quadratic_poly poly, int lg_world_size, int rank)
 	return result;
 }
 #include <unistd.h>
-prime_field::field_element zk_verifier::leader_gather_and_continue_sumcheck(linear_poly V_mult_add, linear_poly addV_array, linear_poly add_mult_sum, prime_field::field_element alpha_beta_sum, prime_field::field_element &previous_random, prime_field::field_element* r, int lg_n, int rank, int lg_world, int &proof_size)
+prime_field::field_element zk_verifier::leader_gather_and_continue_sumcheck(linear_poly V_mult_add, linear_poly addV_array, linear_poly add_mult_sum, prime_field::field_element alpha_beta_sum, prime_field::field_element &previous_random, prime_field::field_element* r, int lg_n, int rank, int lg_world, int &proof_size, prime_field::field_element offset)
 {
 	printf("Leader gather and continue sumcheck on %d machines %d\n", 1 << lg_world, rank);
 	
@@ -1108,6 +1126,7 @@ prime_field::field_element zk_verifier::leader_gather_and_continue_sumcheck(line
 			p -> V_mult_add[i] = V_mult_add_array[i];
 			p -> addV_array[i] = addV_array_array[i];
 			p -> add_mult_sum[i] = add_mult_sum_array[i];
+			
 			auto tmp = add_mult_sum_array[i] * V_mult_add_array[i];
 			tmp.b = tmp.b + addV_array_array[i].a;
 			tmp.c = tmp.c + addV_array_array[i].b;
@@ -1122,16 +1141,17 @@ prime_field::field_element zk_verifier::leader_gather_and_continue_sumcheck(line
 			proof_size += sizeof(quadratic_poly);
 			previous_random = r[i + lg_n];
 
-			if(poly.eval(0) + poly.eval(1) != alpha_beta_sum)
+			if(poly.eval(0) + poly.eval(1) + offset != alpha_beta_sum)
 			{
-				printf("Verification fail, phase1, in master node, current bit %d\n", i);
+				printf("Verification fail, in master node, current bit %d\n", i);
 				assert(false);
 			}
 			else
 			{
-				printf("Verification pass, phase1, in master node, current bit %d\n", i);
+				printf("Verification pass, in master node, current bit %d\n", i);
 			}
-			alpha_beta_sum = poly.eval(r[i + lg_n]);
+			alpha_beta_sum = poly.eval(r[i + lg_n]) + offset;
+
 		}
 		printf("Leader calculation done\n");
 	}
@@ -1288,7 +1308,10 @@ bool zk_verifier::verify(const char* output_path)
 		//leader node accumlate the result and continue the sumcheck phase 1
 		printf("rank %d, prior leader gather sum %s\n", rank, alpha_beta_sum.to_string());
 		assert(p -> total_uv == 1);
-		alpha_beta_sum = leader_gather_and_continue_sumcheck(p -> V_mult_add[0], p -> addV_array[0], p -> add_mult_sum[0], alpha_beta_sum, previous_random, r_u, C.circuit[i - 1].bit_length, rank, lg_world, proof_size);
+		alpha_beta_sum = leader_gather_and_continue_sumcheck(p -> V_mult_add[0], p -> addV_array[0], p -> add_mult_sum[0], alpha_beta_sum, previous_random, r_u, C.circuit[i - 1].bit_length, rank, lg_world, proof_size, prime_field::field_element(0));
+
+		auto check_point_sum = alpha_beta_sum;
+
 		printf("rank %d, after leader gather sum %s\n", rank, alpha_beta_sum.to_string());
 		printf("rank %d finished leader gather\n", rank);
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -1317,11 +1340,15 @@ bool zk_verifier::verify(const char* output_path)
 			{
 				fprintf(stderr, "Verification pass, phase2, circuit level %d, current bit %d\n", i, j);
 			}
+		//	printf("Assert pos %d\n", j);
+		//	assert(alpha_beta_sum * (prime_field::field_element(1) - r_v[j]) == poly.eval(r_v[j]));
 			alpha_beta_sum = poly.eval(r_v[j]) + direct_relay_value * p -> v_u;
 		}
 
 		//leader node accumlate the result and continue the sumcheck phase 2
-		alpha_beta_sum = leader_gather_and_continue_sumcheck(p -> V_mult_add[0], p -> addV_array[0], p -> add_mult_sum[0], alpha_beta_sum, previous_random, r_v, C.circuit[i - 1].bit_length, rank, lg_world, proof_size);
+//		assert(p -> add_mult_sum[0].a == prime_field::field_element(0));
+//		assert(p -> add_mult_sum[0].b == prime_field::field_element(0));
+		alpha_beta_sum = leader_gather_and_continue_sumcheck(p -> V_mult_add[0], p -> addV_array[0], p -> add_mult_sum[0], alpha_beta_sum, previous_random, r_v, C.circuit[i - 1].bit_length, rank, lg_world, proof_size, direct_relay_value * p -> v_u);
 
 		auto final_claims = p -> sumcheck_finalize(previous_random);
 		
