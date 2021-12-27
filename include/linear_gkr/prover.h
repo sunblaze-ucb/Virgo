@@ -50,6 +50,7 @@ public:
 	void get_circuit(layered_circuit &from_verifier);
 	/**Evaluate the output of the circuit.*/
 	prime_field::field_element* evaluate();
+	void get_witness(prime_field::field_element*, int);
 	/**Generate random mask polynomials and initialize parameters. */
 	void proof_init();
 	

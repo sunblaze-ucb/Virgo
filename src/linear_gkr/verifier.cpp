@@ -7,6 +7,7 @@
 #include "VPD/vpd_verifier.h"
 
 using namespace std;
+
 void zk_verifier::get_prover(zk_prover *pp)
 {
 	p = pp;
@@ -301,6 +302,14 @@ void zk_verifier::read_circuit(const char *path, const char *meta_path)
 	
 	p -> init_array(max_bit_length);
 
+	init_array(max_bit_length);
+	
+	fclose(circuit_in);
+	fclose(meta_in);
+}
+
+void zk_verifier::init_array(int max_bit_length)
+{
 	int first_half_len = max_bit_length / 2, second_half_len = max_bit_length - first_half_len;
 	beta_g_r0_first_half = new prime_field::field_element[(1 << first_half_len)];
 	beta_g_r0_second_half = new prime_field::field_element[(1 << second_half_len)];
@@ -319,16 +328,13 @@ void zk_verifier::read_circuit(const char *path, const char *meta_path)
 	beta_v_block_second_half = new prime_field::field_element[(1 << second_half_len)];
 	beta_u_block_first_half = new prime_field::field_element[(1 << first_half_len)];
 	beta_u_block_second_half = new prime_field::field_element[(1 << second_half_len)];
-	
-	fclose(circuit_in);
-	fclose(meta_in);
 }
 
 vector<prime_field::field_element> zk_verifier::predicates(int depth, prime_field::field_element *r_0, prime_field::field_element *r_1, prime_field::field_element *r_u, prime_field::field_element *r_v, prime_field::field_element alpha, prime_field::field_element beta)
 {
 	std::vector<prime_field::field_element> ret_para;
 	std::vector<prime_field::field_element> ret;
-	const int gate_type_count = 14;
+	const int gate_type_count = 15;
 	ret.resize(gate_type_count);
 	ret_para.resize(gate_type_count);
 	for(int i = 0; i < gate_type_count; ++i)
@@ -640,6 +646,23 @@ vector<prime_field::field_element> zk_verifier::predicates(int depth, prime_fiel
 						int u_second_half = j >> first_half_uv;
 						ret[12] = ret[12] + beta_g_val * beta_v_0 * (beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half]);
 						beta_v_0 = beta_v_0 + beta_v_0;
+					}
+					break;
+				}
+				case 14:
+				{
+					int g_first_half = g & ((1 << first_half_g) - 1);
+					int g_second_half = (g >> first_half_g);
+					
+					auto beta_g_val = beta_g_r0_first_half[g_first_half] * beta_g_r0_second_half[g_second_half] + beta_g_r1_first_half[g_first_half] * beta_g_r1_second_half[g_second_half];
+					auto beta_v_0 = beta_v_first_half[0] * beta_v_second_half[0];
+					for(int j = 0; j < C.circuit[depth].gates[i].parameter_length; ++j)
+					{
+						long long src = C.circuit[depth].gates[i].src[j];
+						int u_first_half = src & ((1 << first_half_uv) - 1);
+						int u_second_half = src >> first_half_uv;
+						prime_field::field_element weight = C.circuit[depth].gates[i].weight[j];
+						ret[14] = ret[14] + beta_g_val * beta_v_0 * (beta_u_first_half[u_first_half] * beta_u_second_half[u_second_half]) * weight;
 					}
 					break;
 				}
@@ -998,7 +1021,7 @@ prime_field::field_element* public_array_prepare(prime_field::field_element *r, 
 
 bool zk_verifier::verify(const char* output_path)
 {
-	int proof_size = 0;
+	proof_size = 0;
 	//there is a way to compress binlinear pairing element
 	double verification_time = 0;
 	double predicates_calc_time = 0;
@@ -1083,7 +1106,7 @@ bool zk_verifier::verify(const char* output_path)
 			}
 			else
 			{
-			//	fprintf(stderr, "Verification pass, phase1, circuit %d, current bit %d\n", i, j);
+				//fprintf(stderr, "Verification pass, phase1, circuit %d, current bit %d\n", i, j);
 			}
 			alpha_beta_sum = poly.eval(r_u[j]);
 		}
@@ -1107,7 +1130,7 @@ bool zk_verifier::verify(const char* output_path)
 			}
 			else
 			{
-			//	fprintf(stderr, "Verification pass, phase2, circuit level %d, current bit %d\n", i, j);
+				//fprintf(stderr, "Verification pass, phase2, circuit level %d, current bit %d\n", i, j);
 			}
 			alpha_beta_sum = poly.eval(r_v[j]) + direct_relay_value * p -> v_u;
 		}
@@ -1142,6 +1165,7 @@ bool zk_verifier::verify(const char* output_path)
 		auto relay_value = predicates_value[10];
 		auto exp_sum_value = predicates_value[12];
 		auto bit_test_value = predicates_value[13];
+		auto custom_comb_value = predicates_value[14];
 		
 		std::vector<prime_field::field_element> r;
 		for(int j = 0; j < C.circuit[i - 1].bit_length; ++j)
@@ -1150,7 +1174,7 @@ bool zk_verifier::verify(const char* output_path)
 			r.push_back(r_v[j]);
 		
 	
-		if(alpha_beta_sum != (add_value * (v_u + v_v) + mult_value * v_u * v_v + not_value * (prime_field::field_element(1) - v_u) + minus_value * (v_u - v_v) + xor_value * (v_u + v_v - prime_field::field_element(2) * v_u * v_v) + naab_value * (v_v - v_u * v_v) + sum_value * v_u + relay_value * v_u + exp_sum_value * v_u + bit_test_value * (prime_field::field_element(1) - v_v) * v_u) + direct_relay_value * v_u)
+		if(alpha_beta_sum != (add_value * (v_u + v_v) + mult_value * v_u * v_v + not_value * (prime_field::field_element(1) - v_u) + minus_value * (v_u - v_v) + xor_value * (v_u + v_v - prime_field::field_element(2) * v_u * v_v) + naab_value * (v_v - v_u * v_v) + sum_value * v_u + custom_comb_value * v_u + relay_value * v_u + exp_sum_value * v_u + bit_test_value * (prime_field::field_element(1) - v_v) * v_u) + direct_relay_value * v_u)
 		{
 			fprintf(stderr, "Verification fail, semi final, circuit level %d\n", i);
 			return false;
@@ -1178,6 +1202,7 @@ bool zk_verifier::verify(const char* output_path)
 	std::cerr << "GKR Prove Time " << p -> total_time << std::endl;
 	prime_field::field_element *all_sum;
 	all_sum = new prime_field::field_element[slice_number];
+	printf("GKR witness size %d\n", 1 << C.circuit[0].bit_length);
 	auto merkle_root_l = (p -> poly_prover).commit_private_array(p -> circuit_value[0], C.circuit[0].bit_length);
 	
 	q_eval_real = new prime_field::field_element[1 << C.circuit[0].bit_length];
@@ -1211,13 +1236,12 @@ bool zk_verifier::verify(const char* output_path)
 		std::cerr << "Verification rdl time " << verification_rdl_time << std::endl;
 		//verification rdl time is the non-parallel part of the circuit. In all of our experiments and most applications, it can be calculated in O(log n) or O(log^2 n) time. We didn't implement the fast method due to the deadline.
 		std::cerr << "Verification Time " << verification_time - verification_rdl_time << std::endl;
+		v_time = verification_time - verification_rdl_time;
 		std::cerr << "Proof size(bytes) " << proof_size << std::endl;
 		FILE *result = fopen(output_path, "w");
 		fprintf(result, "%lf %lf %lf %lf %d\n", p -> total_time, verification_time, predicates_calc_time, verification_rdl_time, proof_size);
 		fclose(result);
 	}
-	p -> delete_self();
-	delete_self();
 	return true;
 }
 

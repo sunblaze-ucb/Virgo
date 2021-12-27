@@ -6,10 +6,16 @@
 #include <immintrin.h>
 #include <wmmintrin.h>
 #include "my_hhash.h"
+#include "linear_gkr/prime_field.h"
 
 namespace merkle_tree
 {
 extern int size_after_padding;
+
+__hhash_digest hash_single_field_element(prime_field::field_element x);
+
+__hhash_digest hash_double_field_element_merkle_damgard(prime_field::field_element x, prime_field::field_element y, __hhash_digest prev_hash);
+
 namespace merkle_tree_prover
 {
     //Merkle tree functions used by the prover
@@ -20,7 +26,7 @@ namespace merkle_tree_prover
 namespace merkle_tree_verifier
 {
     //Merkle tree functions used by the verifier
-    bool verify_claim(__m128i root_hhash, const void* tree, __m128i hhash_element, int pos_element);
+    bool verify_claim(__hhash_digest root_hhash, const __hhash_digest* tree, __hhash_digest hhash_element, int pos_element, int N, bool *visited, long long &proof_size);
 }
 }
 

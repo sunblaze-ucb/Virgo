@@ -6,7 +6,7 @@ int main()
     prime_field::init();
     int lgN = 20;
     int N = 1 << lgN;
-    int lgRate = 2;
+    int lgRate = 5;
     int rs_rate = 1 << lgRate;
     expander_init(N);
     init_scratch_pad(N * rs_rate * 2);

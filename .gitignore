@@ -2,7 +2,6 @@ build/*
 CMakeFiles/*
 *.cmake
 Makefile
-linear_code
 # Prerequisites
 *.d
 

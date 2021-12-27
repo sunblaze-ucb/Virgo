@@ -8,9 +8,28 @@
 #include <utility>
 #include "poly_commitment/poly_commit.h"
 
+enum gate_types
+{
+	add = 0,
+	mult = 1,
+	dummy = 2,
+	sum = 5,
+	exp_sum = 12,
+	direct_relay = 4,
+	not_gate = 6,
+	minus = 7,
+	xor_gate = 8,
+	bit_test = 13,
+	relay = 10,
+	custom_linear_comb = 14,
+	input = 3
+};
+
 class zk_verifier
 {
 public:
+	int proof_size;
+	double v_time;
 	poly_commit::poly_commit_verifier poly_ver;
 	/** @name Randomness&Const 
 	* Storing randomness or constant for simplifying computation/
@@ -38,6 +57,7 @@ public:
 	bool verify(const char*);
 	void get_prover(zk_prover*);
 	void delete_self();
+	void init_array(int);
 	std::vector<prime_field::field_element> predicates(int depth, prime_field::field_element *r_0, prime_field::field_element *r_1, prime_field::field_element *r_u, prime_field::field_element *r_v, prime_field::field_element alpha, prime_field::field_element beta);
 	prime_field::field_element direct_relay(int depth, prime_field::field_element *r_g, prime_field::field_element *r_u);
 	prime_field::field_element V_in(const prime_field::field_element*, const prime_field::field_element*, prime_field::field_element*, int, int);

@@ -54,7 +54,7 @@ prime_field::field_element zk_prover::V_res(const prime_field::field_element* on
 prime_field::field_element* zk_prover::evaluate()
 {
 	std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
-	circuit_value[0] = new prime_field::field_element[(1 << C -> circuit[0].bit_length)];
+	//circuit_value[0] = new prime_field::field_element[(1 << C -> circuit[0].bit_length)];
 	for(int i = 0; i < (1 << C -> circuit[0].bit_length); ++i)
 	{
 		int g, u, ty;
@@ -62,7 +62,6 @@ prime_field::field_element* zk_prover::evaluate()
 		u = C -> circuit[0].gates[g].u;
 		ty = C -> circuit[0].gates[g].ty;
 		assert(ty == 3 || ty == 2);
-		circuit_value[0][g] = prime_field::field_element(u);
 	}
 	assert(C -> total_depth < 1000000);
 	for(int i = 1; i < C -> total_depth; ++i)
@@ -142,6 +141,16 @@ prime_field::field_element* zk_prover::evaluate()
 				assert(u >= 0 && u < ((1 << C -> circuit[i - 1].bit_length)));
 				circuit_value[i][g] = circuit_value[i - 1][u] * (prime_field::field_element(1) - circuit_value[i - 1][v]);
 			}
+			else if(ty == 14)
+			{
+				circuit_value[i][g] = prime_field::field_element(0);
+				for(int k = 0; k < C -> circuit[i].gates[g].parameter_length; ++k)
+				{
+					prime_field::field_element weight = C -> circuit[i].gates[g].weight[k];
+					long long idx = C -> circuit[i].gates[g].src[k];
+					circuit_value[i][g] = circuit_value[i][g] + circuit_value[i - 1][idx] * weight;
+				}
+			}
 			else
 			{
 				assert(false);
@@ -154,6 +163,15 @@ prime_field::field_element* zk_prover::evaluate()
 	std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t1 - t0);
 	std::cerr << "total evaluation time: " << time_span.count() << " seconds." << std::endl;
 	return circuit_value[C -> total_depth - 1];
+}
+
+void zk_prover::get_witness(prime_field::field_element *inputs, int N)
+{
+	circuit_value[0] = new prime_field::field_element[(1 << C -> circuit[0].bit_length)];
+	for(int i = 0; i < N; ++i)
+	{
+		circuit_value[0][i] = inputs[i];
+	}
 }
 
 
@@ -175,11 +193,11 @@ void zk_prover::sumcheck_init(int layer_id, int bit_length_g, int bit_length_u, 
 }
 
 linear_poly *V_mult_add_new, *addV_array_new, *add_mult_sum_new;
-bool gate_meet[14];
+bool gate_meet[15];
 quadratic_poly *rets_prev, *rets_cur;
 void zk_prover::init_array(int max_bit_length)
 {
-	memset(gate_meet, 0, sizeof(bool) * 14);
+	memset(gate_meet, 0, sizeof(bool) * 15);
 	int half_length = (max_bit_length >> 1) + 1;
 	beta_g_r0_fhalf = new prime_field::field_element[(1 << half_length)];
 	beta_g_r0_shalf = new prime_field::field_element[(1 << half_length)];
@@ -372,6 +390,13 @@ void zk_prover::sumcheck_phase1_init()
 				intermediates0[i] = tmp;
 				break;
 			}
+			case 14: //custom comb
+			{
+				auto tmp = beta_g_r0_fhalf[i & mask_fhalf] * beta_g_r0_shalf[i >> first_half] 
+					+ beta_g_r1_fhalf[i & mask_fhalf] * beta_g_r1_shalf[i >> first_half];
+				intermediates1[i] = tmp;
+				break;
+			}
 			default:
 			{
 				printf("Warning Unknown gate %d\n", C -> circuit[sumcheck_layer_id].gates[i].ty);
@@ -437,6 +462,22 @@ void zk_prover::sumcheck_phase1_init()
 				{
 					add_mult_sum[j].b = (add_mult_sum[j].b + tmp);
 					tmp = tmp + tmp;
+				}
+				break;
+			}
+			case 14:
+			{
+				if(!gate_meet[C -> circuit[sumcheck_layer_id].gates[i].ty])
+				{
+					//printf("first meet %d gate\n", C -> circuit[sumcheck_layer_id].gates[i].ty);
+					gate_meet[C -> circuit[sumcheck_layer_id].gates[i].ty] = true;
+				}
+				auto tmp = intermediates1[i];
+				for(int j = 0; j < C -> circuit[sumcheck_layer_id].gates[i].parameter_length; ++j)
+				{
+					int src = C -> circuit[sumcheck_layer_id].gates[i].src[j];
+					prime_field::field_element weight = C -> circuit[sumcheck_layer_id].gates[i].weight[j];
+					add_mult_sum[src].b = add_mult_sum[src].b + weight * tmp;
 				}
 				break;
 			}
@@ -702,6 +743,15 @@ void zk_prover::sumcheck_phase2_init(prime_field::field_element previous_random,
 				intermediates0[i] = tmp_g_vu;
 				break;
 			}
+			case 14: //custom comb gate
+			{
+				auto tmp_g = (beta_g_r0_fhalf[i & mask_g_fhalf] * beta_g_r0_shalf[i >> first_g_half] 
+								+ beta_g_r1_fhalf[i & mask_g_fhalf] * beta_g_r1_shalf[i >> first_g_half]);
+				auto tmp_g_vu = tmp_g * v_u;
+				intermediates0[i] = tmp_g_vu;
+				break;
+			}
+
 			case 6: //not gate
 			{
 				auto tmp_u = beta_u_fhalf[u & mask_fhalf] * beta_u_shalf[u >> first_half];
@@ -813,6 +863,19 @@ void zk_prover::sumcheck_phase2_init(prime_field::field_element previous_random,
 					auto tmp_u = beta_u_fhalf[j & mask_fhalf] * beta_u_shalf[j >> first_half];
 					addV_array[0].b = (addV_array[0].b + tmp_g_vu * tmp_u);
 					tmp_g_vu = tmp_g_vu + tmp_g_vu;
+				}
+				break;
+			}
+			case 14: //custom comb gate
+			{
+				auto tmp_g_vu = intermediates0[i];
+				
+				for(int j = 0; j < C -> circuit[sumcheck_layer_id].gates[i].parameter_length; ++j)
+				{
+					long long src = C -> circuit[sumcheck_layer_id].gates[i].src[j];
+					auto tmp_u = beta_u_fhalf[src & mask_fhalf] * beta_u_shalf[src >> first_half];
+					prime_field::field_element weight = C -> circuit[sumcheck_layer_id].gates[i].weight[j];
+					addV_array[0].b = (addV_array[0].b + tmp_g_vu * tmp_u * weight);
 				}
 				break;
 			}
